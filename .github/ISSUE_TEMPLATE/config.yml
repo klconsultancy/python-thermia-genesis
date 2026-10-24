@@ -1,5 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Home Assistant integration
-    url: https://github.com/klconsultancy/ha-thermia-genesis/issues
-    about: Problems with entities or the config flow belong in the integration repository.
