@@ -35,17 +35,30 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
 - Registers are **hand-written** with `modbus_connection.model` field types (`gauge`,
   `integer(signed=True)`, `coil`, `discrete_input`, `enum`, ...). No CSV or code generator:
   the map is small enough that readable, reviewable code wins.
-- A **consistency test** parses the markdown tables and checks that every documented
-  register exists in the map with the same address and scale.
-- Contradictions in the documentation, and how we resolved them, are recorded in
-  [`errata.md`](errata.md). The real register dump of the reference pump decides.
+- The `v17_1` module has one `Component` per register space (`InputRegisters`,
+  `HoldingRegisters`, ...), mirroring the tables of chapter 3. The public API groups them
+  per subsystem on top (see below).
+- A **consistency test** parses the markdown tables and checks that every register in the
+  map is documented in the same register space with the same scale, and that each half of a
+  32-bit value sits on the register the document labels MSB or LSB. The reverse direction
+  (every documented register exists in the map) is added once the map is complete.
+- Contradictions in the documentation, behaviour of the reference pump the documentation
+  doesn't describe, and how we handle each, are recorded in [`errata.md`](errata.md). The
+  real register dump of the reference pump decides.
 
 ## Encoding
 
 - Signed values use two's complement in a single 16-bit register.
-- Scales are 1, 10 or 100 (the transmitted value is that many times larger).
+- Scales are 1, 10 or 100 (the transmitted value is that many times larger). The map
+  declares the inverse multiplier `modbus_connection` expects (`gauge(69, 0.01)` for 100).
 - 32-bit counters are split in an MSB and an LSB register and combined as
-  `MSB × 65536 + LSB`.
+  `MSB × 65536 + LSB`, declared with `uint32`. The order differs per register: the operating
+  hours put the MSB first (`word_order="big"`), the electric meter kWh total puts the LSB
+  first (`word_order="little"`).
+- A temperature sensor the pump doesn't have reads 20000 (200.00 °C). The map declares it as
+  `nan=ABSENT_SENSOR`, so the value is `None` instead of a bogus reading.
+- Decoding itself is `modbus_connection`'s; our tests check it per field type through the
+  components, using the worked examples of chapter 2.1.
 
 ## Public API
 
