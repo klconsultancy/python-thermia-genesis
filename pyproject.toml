@@ -55,6 +55,7 @@ include = ["src"]
 target-version = "py312"
 line-length = 100
 src = ["src", "tests"]
+extend-exclude = [".worktrees"]
 
 [tool.ruff.lint]
 select = ["ALL"]

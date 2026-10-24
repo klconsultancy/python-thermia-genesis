@@ -27,10 +27,14 @@ pip install "thermia-genesis[tmodbus]"
 
 ## Development
 
-Open the repository in its devcontainer, then:
+Changes are made in git worktrees under `.worktrees/`, and the tools run in the
+repository's devcontainer:
 
 ```sh
-uv run pytest
+git config worktree.useRelativePaths true
+git worktree add .worktrees/my-change -b my-change origin/main
+devcontainer up --workspace-folder .
+devcontainer exec --workspace-folder . uv run --directory .worktrees/my-change pytest
 ```
 
 See [`AGENTS.md`](AGENTS.md) for the workflow and [`docs/design.md`](docs/design.md) for the
