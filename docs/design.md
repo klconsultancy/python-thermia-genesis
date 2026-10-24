@@ -40,6 +40,10 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   register space it uses, named after it: `HeatPumpUnitCoils`, `HeatPumpUnitDiscreteInputs`,
   `HeatPumpUnitInputRegisters`, `HeatPumpUnitHoldingRegisters`. This mirrors the tables of
   chapter 3. Enums from the footnotes live in `v17_1.enums`.
+- Field names follow the document's description, without the subsystem as prefix: the
+  module already says it (`tap_water.TapWaterInputRegisters.top_temperature`, not
+  `tap_water_top_temperature`). A part within the subsystem keeps its prefix (`hgw_`,
+  `mix_valve_1_`), and so does a register named after another subsystem.
 - The map is read-only for now: no field is declared writable. Writing coils and holding
   registers comes with the write API (#19, see Scope).
 - Chapters 4–9 list a few registers that chapter 3 doesn't (HGW, pool temperatures). They

@@ -79,8 +79,8 @@ class HeatPumpUnitDiscreteInputs(Component):
     brine_pump_on = discrete_input(218)
     external_heater_circulation_pump_control_signal = discrete_input(219)
     external_additional_heater_active = discrete_input(221)
-    heat_pump_stopping = discrete_input(224)
-    heat_pump_ok_to_start = discrete_input(225)
+    stopping = discrete_input(224)
+    ok_to_start = discrete_input(225)
     compressor_unable_to_speed_up = discrete_input(246)
 
 
