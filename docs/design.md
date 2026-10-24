@@ -82,9 +82,12 @@ possible. `async_update()` returns an `UpdateReport` so callers can tell which p
 - The firmware version is read from input registers 311–313 (major, minor, micro).
 - On a major/minor version other than 17.1 the library still uses the 17.1 map; the Home
   Assistant integration raises a repair issue.
-- Optional subsystems (EM cooling, active cooling, pool, mix valve 1, electric meter) are
-  detected from their "Enable ..." coils. Registers the pump refuses with an illegal-address
-  exception are treated as optional.
+- Optional subsystems are detected from their "Enable ..." coils: passive cooling (EM)
+  coil 33, active cooling coil 10, pool coil 28, mix valve 1 coil 11. The electric meter has
+  no such coil; it counts as absent when its phase voltages (input 72–74) all read 0.
+- The pump answers every address up to at least 5000 in all four register spaces, so a
+  missing subsystem never shows up as an illegal-address exception. Values of a sensor the
+  pump doesn't have decode as `None` (see Encoding).
 - There is no register for the model or a serial number.
 
 ## Tooling and process
