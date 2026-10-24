@@ -114,7 +114,8 @@ class ThermiaGenesis(Device):
     def firmware_version(self) -> FirmwareVersion | None:
         """The control software version, or ``None`` until an update has read it.
 
-        The 17.1 map is used whatever the version; check ``supported`` to warn.
+        After a failed read the last value remains, like every field. The 17.1 map is used
+        whatever the version; check ``supported`` to warn.
         """
         major = self.heat_pump.software_version_major
         minor = self.heat_pump.software_version_minor

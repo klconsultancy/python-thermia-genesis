@@ -43,7 +43,7 @@ async def test_reports_another_firmware_as_unsupported(mock_modbus_unit: MockMod
     assert pump.heat_pump.outdoor_temperature == 9.05
 
 
-async def test_has_no_firmware_version_when_its_read_fails(
+async def test_has_no_firmware_version_when_the_first_read_fails(
     mock_modbus_unit: MockModbusUnit,
 ) -> None:
     mock_modbus_unit.fail_read(311, IllegalDataAddressError(), register_type="input")
@@ -52,3 +52,18 @@ async def test_has_no_firmware_version_when_its_read_fails(
     await pump.async_update()
 
     assert pump.firmware_version is None
+
+
+async def test_keeps_the_last_firmware_version_after_a_failed_read(
+    mock_modbus_unit: MockModbusUnit,
+) -> None:
+    # Like every field: the report says the input registers failed, the value stays.
+    mock_modbus_unit.input[311] = [17, 1, 11]
+    pump = ThermiaGenesis(mock_modbus_unit)
+    await pump.async_update()
+    mock_modbus_unit.fail_read(311, IllegalDataAddressError(), register_type="input")
+
+    report = await pump.async_update()
+
+    assert "input_registers" in report.failed
+    assert pump.firmware_version == FirmwareVersion(17, 1, 11)
