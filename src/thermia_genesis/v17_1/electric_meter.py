@@ -30,9 +30,10 @@ class ElectricMeterInputRegisters(Component):
     l2_l3_voltage = gauge(76, 0.1, unit="V")
     l3_l1_voltage = gauge(77, 0.1, unit="V")
 
-    # Power and energy
-    l1_power = integer(78, signed=False, unit="W")
-    l2_power = integer(79, signed=False, unit="W")
-    l3_power = integer(80, signed=False, unit="W")
+    # Power and energy. A current limiter measures the house connection, so the phase power
+    # may be negative when the house exports; see errata.md.
+    l1_power = integer(78, unit="W")
+    l2_power = integer(79, unit="W")
+    l3_power = integer(80, unit="W")
     meter_value = integer(81, signed=False, unit="kWh")
     kwh_total = uint32(83, scale=0.1, word_order="little", unit="kWh")

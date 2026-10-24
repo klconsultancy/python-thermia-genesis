@@ -259,6 +259,10 @@ SIGNED = {
     ("input", 36): "season integral; the reference pump reads -150",
     ("input", 131): "season integral; the reference pump reads -150",
     ("input", 319): "temperature in °C",
+    **dict.fromkeys(
+        [("input", 78), ("input", 79), ("input", 80)],
+        "phase power at the house connection; export may be negative",
+    ),
     ("holding", 75): "PID sum; the reference pump reads -6",
 }
 

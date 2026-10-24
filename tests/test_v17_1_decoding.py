@@ -153,3 +153,13 @@ async def test_reads_several_running_demands_as_flags(mock_modbus_unit: MockModb
     await registers.async_update()
 
     assert registers.running_demands == RunningDemands.HOT_WATER | RunningDemands.HEAT
+
+
+async def test_reads_negative_phase_power(mock_modbus_unit: MockModbusUnit) -> None:
+    # A current limiter measures the house connection, so export can be negative.
+    mock_modbus_unit.input[78] = 65036
+    registers = ElectricMeterInputRegisters(mock_modbus_unit)
+
+    await registers.async_update()
+
+    assert registers.l1_power == -500
