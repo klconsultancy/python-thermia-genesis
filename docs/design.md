@@ -54,6 +54,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   `MSB × 65536 + LSB`, declared with `uint32`. The order differs per register: the operating
   hours put the MSB first (`word_order="big"`), the electric meter kWh total puts the LSB
   first (`word_order="little"`).
+- A temperature sensor the pump doesn't have reads 20000 (200.00 °C). The map declares it as
+  `nan=ABSENT_SENSOR`, so the value is `None` instead of a bogus reading.
 - Decoding itself is `modbus_connection`'s; our tests check it per field type through the
   components, using the worked examples of chapter 2.1.
 

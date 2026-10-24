@@ -33,3 +33,13 @@ async def test_combines_lsb_before_msb_into_scaled_counter(
     await registers.async_update()
 
     assert registers.electric_meter_kwh_total == 6554.0
+
+
+async def test_reads_absent_sensor_as_none(mock_modbus_unit: MockModbusUnit) -> None:
+    # The reference pump reports 20000 (200.00 °C) for temperature sensors it doesn't have.
+    mock_modbus_unit.input[12] = 20000
+    registers = InputRegisters(mock_modbus_unit)
+
+    await registers.async_update()
+
+    assert registers.system_supply_line_temperature is None

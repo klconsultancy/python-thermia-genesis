@@ -83,7 +83,7 @@ def test_reads_every_table_of_the_address_list() -> None:
 
 def test_finds_the_mapped_registers() -> None:
     # Without this, an empty map would skip the parametrized check instead of failing.
-    assert len(MAPPED) == 3
+    assert len(MAPPED) == 4
 
 
 @pytest.mark.parametrize("name", sorted(MAPPED))
