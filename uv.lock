@@ -559,13 +559,13 @@ tmodbus = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "modbus-connection", extra = ["tmodbus"] },
     { name = "mypy" },
     { name = "prek" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "thermia-genesis", extra = ["tmodbus"] },
 ]
 
 [package.metadata]
@@ -577,13 +577,13 @@ provides-extras = ["tmodbus"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "modbus-connection", extras = ["tmodbus"], specifier = ">=4.12.6,<5" },
     { name = "mypy" },
     { name = "prek" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "thermia-genesis", extras = ["tmodbus"] },
 ]
 
 [[package]]
