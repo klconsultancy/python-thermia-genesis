@@ -59,11 +59,11 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
 - A **consistency test** parses the markdown tables and checks that every register in the
   map is documented in the same register space with the same scale, sits in the module of
   its subsystem, and that each half of a 32-bit value sits on the register the document
-  labels MSB or LSB. For every subsystem that is complete, it also checks the reverse: each
-  of its documented registers is in the map. Once all subsystems are complete, this covers
-  the whole of chapter 3. It also enforces the encoding rules below (absent sensor,
-  signedness), and checks every row of chapters 4–9 against chapter 3; the rows that differ
-  are listed with their errata entry.
+  labels MSB or LSB. It also checks the reverse: every documented register belongs to a
+  subsystem and is in the map, so the map covers the whole of chapter 3 plus the registers
+  only chapters 4–9 list (266 registers in 262 fields). It also enforces the encoding rules
+  below (absent sensor, signedness), and checks every row of chapters 4–9 against chapter 3;
+  the rows that differ are listed with their errata entry.
 - Contradictions in the documentation, behaviour of the reference pump the documentation
   doesn't describe, and how we handle each, are recorded in [`errata.md`](errata.md). The
   real register dump of the reference pump decides.
@@ -77,7 +77,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   - unscaled numbers (`integer`) are unsigned, so a count, timer or meter value above 32767
     doesn't turn negative. The exceptions are values that can be negative: the season
     integrals and the PID sum of the external heater (the reference pump reads -150 and -6),
-    and unscaled temperatures. The consistency test lists them, each with its reason;
+    the electric meter's phase power (export at the house connection) and unscaled
+    temperatures. The consistency test lists them, each with its reason;
   - enums, bit fields and 32-bit counters are unsigned.
 - Scales are 1, 10 or 100 (the transmitted value is that many times larger). The map
   declares the inverse multiplier `modbus_connection` expects (`gauge(69, 0.01)` for 100).

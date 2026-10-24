@@ -2,9 +2,12 @@ from modbus_connection.mock import MockModbusUnit
 
 from thermia_genesis.v17_1.electric_meter import ElectricMeterInputRegisters
 from thermia_genesis.v17_1.enums import (
+    Demand,
     ImmersionHeater,
     MixValveMode,
+    OperationalMode,
     OutdoorTemperatureSource,
+    RunningDemands,
     SmartGridMode,
 )
 from thermia_genesis.v17_1.heat import HeatHoldingRegisters, HeatInputRegisters
@@ -14,6 +17,7 @@ from thermia_genesis.v17_1.heat_pump_unit import (
     HeatPumpUnitHoldingRegisters,
     HeatPumpUnitInputRegisters,
 )
+from thermia_genesis.v17_1.status import StatusHoldingRegisters, StatusInputRegisters
 
 
 async def test_decodes_negative_scaled_value(mock_modbus_unit: MockModbusUnit) -> None:
@@ -117,3 +121,45 @@ async def test_reads_mix_valve_mode(mock_modbus_unit: MockModbusUnit) -> None:
     await registers.async_update()
 
     assert registers.mix_valve_1_mode is MixValveMode.AUTO
+
+
+async def test_reads_operational_mode(mock_modbus_unit: MockModbusUnit) -> None:
+    # Footnote *2: 1 OFF, 2 Standby, 3 ON/Auto. The reference pump reads 3.
+    mock_modbus_unit.holding[0] = 3
+    registers = StatusHoldingRegisters(mock_modbus_unit)
+
+    await registers.async_update()
+
+    assert registers.operational_mode is OperationalMode.ON_AUTO
+
+
+async def test_reads_demand_and_running_demands(mock_modbus_unit: MockModbusUnit) -> None:
+    # Footnote *1 gives 99 for no demand; footnote *6 gives bit 10 (1024) for it.
+    # The reference pump reads 99 and 1024 while idle.
+    mock_modbus_unit.input[1] = [99, 1024]
+    registers = StatusInputRegisters(mock_modbus_unit)
+
+    await registers.async_update()
+
+    assert registers.running_demand_1 is Demand.NO_DEMAND
+    assert registers.running_demands == RunningDemands.NO_DEMAND
+
+
+async def test_reads_several_running_demands_as_flags(mock_modbus_unit: MockModbusUnit) -> None:
+    # Footnote *6: bit 2 hot water, bit 3 heat.
+    mock_modbus_unit.input[2] = 0b1100
+    registers = StatusInputRegisters(mock_modbus_unit)
+
+    await registers.async_update()
+
+    assert registers.running_demands == RunningDemands.HOT_WATER | RunningDemands.HEAT
+
+
+async def test_reads_negative_phase_power(mock_modbus_unit: MockModbusUnit) -> None:
+    # A current limiter measures the house connection, so export can be negative.
+    mock_modbus_unit.input[78] = 65036
+    registers = ElectricMeterInputRegisters(mock_modbus_unit)
+
+    await registers.async_update()
+
+    assert registers.l1_power == -500

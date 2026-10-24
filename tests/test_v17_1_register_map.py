@@ -42,8 +42,8 @@ ASSIGNED = {
     ("holding", 125): "heat_pump_unit",
 }
 
-# Subsystems whose registers are all in the map.
-COMPLETE = ["heat_pump_unit", "heat", "tap_water", "cooling", "pool", "electric_meter"]
+# Every subsystem, as a module of v17_1.
+SUBSYSTEM_NAMES = sorted({*CHAPTERS.values(), *ASSIGNED.values()})
 
 
 class DocumentedRegister(NamedTuple):
@@ -210,8 +210,12 @@ def test_mapped_register_matches_address_list(name: str) -> None:
             assert ABSENT_SENSOR in register.nan, documented.description
 
 
-@pytest.mark.parametrize("subsystem", COMPLETE)
-def test_maps_every_register_of_a_complete_subsystem(subsystem: str) -> None:
+def test_every_documented_register_belongs_to_a_subsystem() -> None:
+    assert sorted(DOCUMENTED.keys() - SUBSYSTEMS.keys()) == []
+
+
+@pytest.mark.parametrize("subsystem", SUBSYSTEM_NAMES)
+def test_maps_every_register_of_the_subsystem(subsystem: str) -> None:
     expected = {key for key, name in SUBSYSTEMS.items() if name == subsystem}
     mapped = {
         (register.space, register.address)
@@ -255,6 +259,10 @@ SIGNED = {
     ("input", 36): "season integral; the reference pump reads -150",
     ("input", 131): "season integral; the reference pump reads -150",
     ("input", 319): "temperature in °C",
+    **dict.fromkeys(
+        [("input", 78), ("input", 79), ("input", 80)],
+        "phase power at the house connection; export may be negative",
+    ),
     ("holding", 75): "PID sum; the reference pump reads -6",
 }
 

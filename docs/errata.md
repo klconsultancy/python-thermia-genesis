@@ -18,6 +18,7 @@ otherwise.
 | Input register 47 | Chapter 6 lists it twice: as "Tap water valve position (%)" (as in chapter 3) and as "HGW mix valve position (%)". The reference pump reads 0. | "Tap water valve position" (chapter 3). |
 | Input registers 119–120 "Pool supply/return line temperature (EM)" | Listed in chapter 8 only, not in chapter 3 (holding 119–120 are different registers). The reference pump has no pool: both read 20000. | Mapped from chapter 8. |
 | Holding register 58 "Pool charge set point (EM)" | Unit `°C` in chapter 8, `%` in chapter 3. The reference pump, which has no pool, reads 2600: 26.00, a typical pool temperature. | `°C` (chapter 8, supported by the dump), with `nan=ABSENT_SENSOR` like the other temperatures. To be verified on a pump with a pool. |
+| Input registers 78–80 "Electric meter L1/L2/L3 power (W)" | The document doesn't say whether the power can be negative. The meter needs the current limiter, which measures the house connection, so a house that exports (for example with solar panels) may report negative power. The reference pump has no meter. | Signed, so export reads as negative watts instead of about 65000 W; a phase of a house connection stays far below 32767 W. To be verified on a pump with a meter and solar panels. |
 | Input registers 83–84 "Electric meter kWh total" | LSB listed before MSB, the reverse of every other 32-bit pair. The reference pump has no electric meter (both read 0), so its dump cannot confirm the order. | LSB first, as documented. To be verified on a pump with an electric meter. |
 
 ## Document-wide
@@ -25,6 +26,7 @@ otherwise.
 | Topic | Issue | Resolution |
 | ----- | ----- | ---------- |
 | Scale 100 (chapter 2.1) | The scale table says the transmitted value is "a tenfold larger"; the worked example in the same section transmits -5 °C as -500. | Hundredfold (the worked example; the reference pump's discharge pipe reads 2667: 26.67 °C, not 266.7 °C). |
+| Footnote \*5 "Should always be set to 1 i auto mode" | Printed under the coil table of chapter 3 and with the footnotes of chapter 9, but no register refers to it. | Not applied to any register. To be verified which register it belongs to. |
 | Footnotes | Printed at the end of chapter 9 instead of in their own chapter (as in 17.0). | Treated as document-wide footnotes. |
 
 ## Undocumented behaviour
