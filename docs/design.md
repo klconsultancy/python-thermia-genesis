@@ -36,10 +36,14 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   `integer(signed=True)`, `coil`, `discrete_input`, `enum`, ...). No CSV or code generator:
   the map is small enough that readable, reviewable code wins.
 - The `v17_1` package has one module per subsystem (`heat_pump_unit`, `heat`, `tap_water`,
-  `cooling`, `pool`, `electric_meter`, `status`). Each module has up to two components:
-  `...Readings` for the read-only spaces (input registers and discrete inputs) and
-  `...Settings` for the read/write spaces (holding registers and coils). Enums from the
-  footnotes live in `v17_1.enums`.
+  `cooling`, `pool`, `electric_meter`, `status`). Each module has one component per Modbus
+  register space it uses, named after it: `HeatPumpUnitCoils`, `HeatPumpUnitDiscreteInputs`,
+  `HeatPumpUnitInputRegisters`, `HeatPumpUnitHoldingRegisters`. This mirrors the tables of
+  chapter 3. Enums from the footnotes live in `v17_1.enums`.
+- The map is read-only for now: no field is declared writable. Writing coils and holding
+  registers comes with the write API (#19, see Scope).
+- Chapters 4–9 list a few registers that chapter 3 doesn't (HGW, pool temperatures). They
+  are mapped from their chapter and recorded in the errata.
 - A register belongs to the subsystem of the chapter (4–9) that lists it. Chapters 4–9 leave
   some registers out or group them oddly, so these are assigned explicitly:
   - cooling: holding 105 and 106 (start/stop temperature), discrete 47, 238 and 242;
@@ -52,7 +56,9 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   its subsystem, and that each half of a 32-bit value sits on the register the document
   labels MSB or LSB. For every subsystem that is complete, it also checks the reverse: each
   of its documented registers is in the map. Once all subsystems are complete, this covers
-  the whole of chapter 3.
+  the whole of chapter 3. It also enforces the encoding rules below (absent sensor,
+  signedness), and checks every row of chapters 4–9 against chapter 3; the rows that differ
+  are listed with their errata entry.
 - Contradictions in the documentation, behaviour of the reference pump the documentation
   doesn't describe, and how we handle each, are recorded in [`errata.md`](errata.md). The
   real register dump of the reference pump decides.
@@ -66,7 +72,7 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   - unscaled numbers (`integer`) are unsigned, so a count, timer or meter value above 32767
     doesn't turn negative. The exceptions are values that can be negative: the season
     integrals and the PID sum of the external heater (the reference pump reads -150 and -6),
-    and unscaled temperatures;
+    and unscaled temperatures. The consistency test lists them, each with its reason;
   - enums, bit fields and 32-bit counters are unsigned.
 - Scales are 1, 10 or 100 (the transmitted value is that many times larger). The map
   declares the inverse multiplier `modbus_connection` expects (`gauge(69, 0.01)` for 100).

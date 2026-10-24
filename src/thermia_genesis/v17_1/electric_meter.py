@@ -3,8 +3,8 @@
 from modbus_connection.model import Component, uint32
 
 
-class ElectricMeterReadings(Component):
-    """Read-only registers of the electric meter."""
+class ElectricMeterInputRegisters(Component):
+    """Input registers of the electric meter."""
 
     register_space = "input"
 

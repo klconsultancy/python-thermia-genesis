@@ -62,23 +62,53 @@ def space_of(de_facto_address: int) -> str:
     return "coil"
 
 
-def read_table(path: Path) -> dict[tuple[str, int], DocumentedRegister]:
-    """The register rows of a chapter, keyed by register space and zero-based address."""
-    registers: dict[tuple[str, int], DocumentedRegister] = {}
+type Key = tuple[str, int]  # register space and zero-based address
+
+
+def read_rows(path: Path) -> list[tuple[Key, DocumentedRegister]]:
+    """The register rows of a chapter, in document order."""
+    rows = []
     for line in path.read_text(encoding="utf-8").splitlines():
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
         if len(cells) != 7 or not cells[3].isdigit():
             continue  # not a register row: prose, header or separator
         key = (space_of(int(cells[4])), int(cells[3]))
-        registers[key] = DocumentedRegister(cells[1], int(cells[5]), cells[6])
-    return registers
+        rows.append((key, DocumentedRegister(cells[1], int(cells[5]), cells[6])))
+    return rows
 
 
-DOCUMENTED = read_table(PROTOCOL / "03-address-list.md")
+def read_table(path: Path) -> dict[Key, DocumentedRegister]:
+    return dict(read_rows(path))
 
 
-def documented_subsystems() -> dict[tuple[str, int], str]:
-    subsystems: dict[tuple[str, int], str] = {}
+ADDRESS_LIST = read_table(PROTOCOL / "03-address-list.md")
+
+# Rows of chapters 4-9 that differ from chapter 3, each recorded in docs/errata.md.
+CHAPTER_ERRATA = {
+    ("04-heat-pump-unit.md", ("coil", 25)): "scale 100 for a coil",
+    ("06-tap-water.md", ("coil", 6)): "not in chapter 3",
+    ("06-tap-water.md", ("coil", 14)): "not in chapter 3",
+    ("06-tap-water.md", ("discrete", 52)): "not in chapter 3",
+    ("06-tap-water.md", ("discrete", 223)): "not in chapter 3",
+    ("06-tap-water.md", ("input", 45)): "not in chapter 3",
+    ("06-tap-water.md", ("input", 47)): "listed twice, also as HGW mix valve position",
+    ("07-cooling.md", ("input", 137)): "unit on/off for an opening degree",
+    ("08-pool.md", ("input", 119)): "not in chapter 3",
+    ("08-pool.md", ("input", 120)): "not in chapter 3",
+    ("08-pool.md", ("holding", 58)): "unit °C instead of %",
+}
+
+# Registers documented only in chapters 4-9 count as documented too (see errata.md).
+DOCUMENTED = ADDRESS_LIST | {
+    key: register
+    for chapter in CHAPTERS
+    for key, register in read_rows(PROTOCOL / chapter)
+    if (chapter, key) in CHAPTER_ERRATA and key not in ADDRESS_LIST
+}
+
+
+def documented_subsystems() -> dict[Key, str]:
+    subsystems: dict[Key, str] = {}
     for chapter, name in CHAPTERS.items():
         subsystems.update(dict.fromkeys(read_table(PROTOCOL / chapter), name))
     subsystems.update(ASSIGNED)
@@ -147,7 +177,7 @@ MAPPED = mapped_registers()
 
 
 def test_reads_every_table_of_the_address_list() -> None:
-    per_space = Counter(space for space, _ in DOCUMENTED)
+    per_space = Counter(space for space, _ in ADDRESS_LIST)
 
     assert per_space == {"coil": 26, "discrete": 68, "input": 99, "holding": 66}
 
@@ -187,3 +217,95 @@ def test_maps_every_register_of_a_complete_subsystem(subsystem: str) -> None:
     }
 
     assert sorted(expected - mapped) == []
+
+
+# Each component holds one Modbus register space, named after it.
+SPACE_OF_COMPONENT = {
+    "Coils": "coil",
+    "DiscreteInputs": "discrete",
+    "InputRegisters": "input",
+    "HoldingRegisters": "holding",
+}
+
+
+@pytest.mark.parametrize(
+    "component", [component for _, component in components()], ids=lambda c: c.__name__
+)
+def test_component_holds_the_register_space_it_is_named_after(
+    component: type[Component],
+) -> None:
+    suffix = next((s for s in SPACE_OF_COMPONENT if component.__name__.endswith(s)), None)
+    assert suffix is not None, f"{component.__name__} is not named after a register space"
+    spaces = {
+        register.space
+        for name in component.declared_fields
+        for register in MAPPED[f"{component.__name__}.{name}"]
+    }
+
+    assert spaces == {SPACE_OF_COMPONENT[suffix]}
+
+
+# Unscaled numbers that can be negative, and why. Every other unscaled number is unsigned,
+# so a count, timer or meter value above 32767 doesn't turn negative (docs/design.md).
+SIGNED = {
+    ("input", 36): "season integral; the reference pump reads -150",
+    ("input", 131): "season integral; the reference pump reads -150",
+    ("input", 319): "temperature in °C",
+    ("holding", 75): "PID sum; the reference pump reads -6",
+}
+
+
+def unscaled_numbers() -> list[tuple[str, int, bool]]:
+    """Space, address and signedness of every unscaled 16-bit number in the map."""
+    return [
+        (component.register_space, field.address, field.signed)
+        for _, component in components()
+        for field in component.declared_fields.values()
+        if isinstance(field, NumberField)
+        and field.count == 1
+        and field.scale == 1
+        and field.convert is None
+    ]
+
+
+@pytest.mark.parametrize(("space", "address", "signed"), unscaled_numbers(), ids=str)
+def test_unscaled_number_is_unsigned_unless_it_can_be_negative(
+    space: str, address: int, *, signed: bool
+) -> None:
+    assert signed == ((space, address) in SIGNED), DOCUMENTED[space, address].description
+
+
+def same_unit(chapter_unit: str, address_list_unit: str) -> bool:
+    """Whether two units agree; a chapter often leaves the unit out or writes on/off."""
+    words = {"active/ inactive": "on/off"}
+    chapter, address_list = (
+        words.get(u.lower(), u.lower()) for u in (chapter_unit, address_list_unit)
+    )
+    return not chapter or chapter == address_list
+
+
+def normalized(description: str) -> str:
+    """A description with the whitespace differences between the chapters removed."""
+    return " ".join(description.split()).replace(" )", ")")
+
+
+def differs_from_address_list(chapter: str, key: Key, register: DocumentedRegister) -> bool:
+    documented = ADDRESS_LIST.get(key)
+    return (
+        documented is None
+        or register.scale != documented.scale
+        or normalized(register.description) != normalized(documented.description)
+        or not same_unit(register.unit, documented.unit)
+        or [k for k, _ in read_rows(PROTOCOL / chapter)].count(key) > 1
+    )
+
+
+@pytest.mark.parametrize("chapter", CHAPTERS)
+def test_chapter_agrees_with_address_list(chapter: str) -> None:
+    differing = {
+        key
+        for key, register in read_rows(PROTOCOL / chapter)
+        if differs_from_address_list(chapter, key, register)
+    }
+
+    assert differing == {key for (name, key) in CHAPTER_ERRATA if name == chapter}

@@ -5,8 +5,8 @@ from modbus_connection.model import Component, gauge
 from thermia_genesis.v17_1 import ABSENT_SENSOR
 
 
-class HeatReadings(Component):
-    """Read-only registers of the heating system."""
+class HeatInputRegisters(Component):
+    """Input registers of the heating system."""
 
     register_space = "input"
 

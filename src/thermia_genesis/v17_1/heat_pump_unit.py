@@ -6,8 +6,86 @@ from thermia_genesis.v17_1 import ABSENT_SENSOR
 from thermia_genesis.v17_1.enums import ImmersionHeater, OutdoorTemperatureSource, SmartGridMode
 
 
-class HeatPumpUnitReadings(Component):
-    """Read-only registers of the heat pump unit."""
+class HeatPumpUnitCoils(Component):
+    """Coils of the heat pump unit."""
+
+    reset_all_alarms = coil(3)
+    enable_external_additional_heater = coil(5)
+    enable_flow_pressure_switch = coil(7)
+    enable_tap_water = coil(8)
+    enable_heat = coil(9)
+    enable_brine_out_monitoring = coil(20)
+    enable_brine_pump_continuous_operation = coil(21)
+    enable_system_circulation_pump = coil(22)
+    enable_additional_heater_only = coil(25)
+    enable_variable_speed_condenser_pump = coil(34)
+    enable_variable_speed_brine_pump = coil(35)
+    enable_outdoor_temperature_dependent_external_heater = coil(39)
+    enable_brine_in_monitoring = coil(40)
+    enable_evaporator_freeze_protection = coil(42)
+    enable_continuous_condenser_pump = coil(59)
+    current_limiter_restricts_external_additional_heater = coil(60)
+    current_limiter_restricts_secondary_units = coil(61)
+
+
+class HeatPumpUnitDiscreteInputs(Component):
+    """Discrete inputs of the heat pump unit."""
+
+    # Alarms
+    alarm_class_a = discrete_input(0)
+    alarm_class_b = discrete_input(1)
+    alarm_class_c = discrete_input(2)
+    alarm_class_d = discrete_input(3)
+    high_pressure_switch_alarm = discrete_input(9)
+    low_pressure_level_alarm = discrete_input(10)
+    high_discharge_pipe_temperature_alarm = discrete_input(11)
+    operating_pressure_limit_indication = discrete_input(12)
+    discharge_pipe_sensor_alarm = discrete_input(13)
+    liquid_line_sensor_alarm = discrete_input(14)
+    suction_gas_sensor_alarm = discrete_input(15)
+    flow_pressure_switch_alarm = discrete_input(16)
+    power_input_phase_detection_alarm = discrete_input(22)
+    inverter_unit_alarm = discrete_input(23)
+    compressor_low_speed_alarm = discrete_input(25)
+    low_super_heat_alarm = discrete_input(26)
+    pressure_ratio_out_of_range_alarm = discrete_input(27)
+    compressor_pressure_outside_envelope_alarm = discrete_input(28)
+    brine_temperature_out_of_range_alarm = discrete_input(29)
+    brine_in_sensor_alarm = discrete_input(30)
+    brine_out_sensor_alarm = discrete_input(31)
+    condenser_in_sensor_alarm = discrete_input(32)
+    condenser_out_sensor_alarm = discrete_input(33)
+    outdoor_sensor_alarm = discrete_input(34)
+    brine_delta_out_of_range_alarm = discrete_input(49)
+    brine_in_high_temperature_alarm = discrete_input(55)
+    brine_in_low_temperature_alarm = discrete_input(56)
+    brine_out_low_temperature_alarm = discrete_input(57)
+    sum_alarm = discrete_input(66)
+    inverter_unit_communication_alarm = discrete_input(75)
+    secondary_unit_communication_alarm = discrete_input(83)
+    other_primary_units_alarm = discrete_input(84)
+    missing_secondary_units_alarm = discrete_input(85)
+    tap_water_top_sensor_alarm = discrete_input(87)
+    external_alarm_input = discrete_input(202)
+
+    # Signals and states
+    external_relay_brine_ground_water_pump = discrete_input(79)
+    oil_boost_in_progress = discrete_input(86)
+    compressor_control_signal = discrete_input(199)
+    smart_grid_1_evu_input = discrete_input(201)
+    smart_grid_2 = discrete_input(204)
+    external_additional_heater_control_signal = discrete_input(206)
+    condenser_pump_on = discrete_input(210)
+    brine_pump_on = discrete_input(218)
+    external_heater_circulation_pump_control_signal = discrete_input(219)
+    external_additional_heater_active = discrete_input(221)
+    heat_pump_stopping = discrete_input(224)
+    heat_pump_ok_to_start = discrete_input(225)
+    compressor_unable_to_speed_up = discrete_input(246)
+
+
+class HeatPumpUnitInputRegisters(Component):
+    """Input registers of the heat pump unit."""
 
     register_space = "input"
 
@@ -71,61 +149,9 @@ class HeatPumpUnitReadings(Component):
     software_version_minor = integer(312, signed=False)
     software_version_micro = integer(313, signed=False)
 
-    # Alarms
-    alarm_class_a = discrete_input(0)
-    alarm_class_b = discrete_input(1)
-    alarm_class_c = discrete_input(2)
-    alarm_class_d = discrete_input(3)
-    high_pressure_switch_alarm = discrete_input(9)
-    low_pressure_level_alarm = discrete_input(10)
-    high_discharge_pipe_temperature_alarm = discrete_input(11)
-    operating_pressure_limit_indication = discrete_input(12)
-    discharge_pipe_sensor_alarm = discrete_input(13)
-    liquid_line_sensor_alarm = discrete_input(14)
-    suction_gas_sensor_alarm = discrete_input(15)
-    flow_pressure_switch_alarm = discrete_input(16)
-    power_input_phase_detection_alarm = discrete_input(22)
-    inverter_unit_alarm = discrete_input(23)
-    compressor_low_speed_alarm = discrete_input(25)
-    low_super_heat_alarm = discrete_input(26)
-    pressure_ratio_out_of_range_alarm = discrete_input(27)
-    compressor_pressure_outside_envelope_alarm = discrete_input(28)
-    brine_temperature_out_of_range_alarm = discrete_input(29)
-    brine_in_sensor_alarm = discrete_input(30)
-    brine_out_sensor_alarm = discrete_input(31)
-    condenser_in_sensor_alarm = discrete_input(32)
-    condenser_out_sensor_alarm = discrete_input(33)
-    outdoor_sensor_alarm = discrete_input(34)
-    brine_delta_out_of_range_alarm = discrete_input(49)
-    brine_in_high_temperature_alarm = discrete_input(55)
-    brine_in_low_temperature_alarm = discrete_input(56)
-    brine_out_low_temperature_alarm = discrete_input(57)
-    sum_alarm = discrete_input(66)
-    inverter_unit_communication_alarm = discrete_input(75)
-    secondary_unit_communication_alarm = discrete_input(83)
-    other_primary_units_alarm = discrete_input(84)
-    missing_secondary_units_alarm = discrete_input(85)
-    tap_water_top_sensor_alarm = discrete_input(87)
-    external_alarm_input = discrete_input(202)
 
-    # Signals and states
-    external_relay_brine_ground_water_pump = discrete_input(79)
-    oil_boost_in_progress = discrete_input(86)
-    compressor_control_signal = discrete_input(199)
-    smart_grid_1_evu_input = discrete_input(201)
-    smart_grid_2 = discrete_input(204)
-    external_additional_heater_control_signal = discrete_input(206)
-    condenser_pump_on = discrete_input(210)
-    brine_pump_on = discrete_input(218)
-    external_heater_circulation_pump_control_signal = discrete_input(219)
-    external_additional_heater_active = discrete_input(221)
-    heat_pump_stopping = discrete_input(224)
-    heat_pump_ok_to_start = discrete_input(225)
-    compressor_unable_to_speed_up = discrete_input(246)
-
-
-class HeatPumpUnitSettings(Component):
-    """Read/write registers of the heat pump unit."""
+class HeatPumpUnitHoldingRegisters(Component):
+    """Holding registers of the heat pump unit."""
 
     register_space = "holding"
 
@@ -165,22 +191,3 @@ class HeatPumpUnitSettings(Component):
     # The meaning of each value depends on the mode (SG-Ready or PL/LU); see chapter 3.4.
     power_consumption_control_mode = integer(124, signed=False)
     input_power_limit = gauge(125, 0.1, unit="kW")
-
-    # Enables
-    reset_all_alarms = coil(3)
-    enable_external_additional_heater = coil(5)
-    enable_flow_pressure_switch = coil(7)
-    enable_tap_water = coil(8)
-    enable_heat = coil(9)
-    enable_brine_out_monitoring = coil(20)
-    enable_brine_pump_continuous_operation = coil(21)
-    enable_system_circulation_pump = coil(22)
-    enable_additional_heater_only = coil(25)
-    enable_variable_speed_condenser_pump = coil(34)
-    enable_variable_speed_brine_pump = coil(35)
-    enable_outdoor_temperature_dependent_external_heater = coil(39)
-    enable_brine_in_monitoring = coil(40)
-    enable_evaporator_freeze_protection = coil(42)
-    enable_continuous_condenser_pump = coil(59)
-    current_limiter_restricts_external_additional_heater = coil(60)
-    current_limiter_restricts_secondary_units = coil(61)
