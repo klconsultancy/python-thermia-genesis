@@ -51,8 +51,9 @@ after the merge with `git worktree remove .worktrees/<branch>`.
 
 ## Registers
 
-- Chapter 3 of `docs/protocol/17.1/03-address-list.md` is the source of truth. Use the
-  zero-based *Address* column, not the de facto address.
+- Chapter 3 of `docs/protocol/17.1/03-address-list.md` is the source of truth, unless
+  `docs/errata.md` records otherwise. Use the zero-based *Address* column, not the de facto
+  address.
 - Record any contradiction in the documentation, and any pump behaviour it doesn't
   describe, in `docs/errata.md`.
 - Never write to a real heat pump from tests. Tests use `modbus_connection`'s mock unit or

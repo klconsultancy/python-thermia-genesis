@@ -30,7 +30,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
 
 - **Source of truth:** chapter 3 (address list) of the Thermia Modbus protocol document,
   transcribed in [`docs/protocol/17.1`](protocol/17.1/). It decides address, register space,
-  scale and unit. Chapters 4–9 are only used to group registers per subsystem. Enum and
+  scale and unit, unless [`errata.md`](errata.md) records otherwise (for example the unit of
+  holding 58). Chapters 4–9 are only used to group registers per subsystem. Enum and
   bit-flag values come from the footnotes.
 - Registers are **hand-written** with `modbus_connection.model` field types (`gauge`,
   `integer`, `coil`, `discrete_input`, `enum`, ...). No CSV or code generator:
