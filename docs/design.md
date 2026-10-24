@@ -59,9 +59,15 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
 
 ## Encoding
 
-- Signed values use two's complement in a single 16-bit register. Every number is declared
-  signed, except enums, bit fields and 32-bit counters: the reference pump reads negative
-  values on registers without a hint in the document (for example the season integrals).
+- Signed values use two's complement in a single 16-bit register. The document doesn't say
+  which registers are signed, so the map decides per field type:
+  - scaled values (`gauge`) are signed. Temperatures and set points go below zero, and a
+    scaled raw value never reaches 32768 in practice, so the sign costs nothing;
+  - unscaled numbers (`integer`) are unsigned, so a count, timer or meter value above 32767
+    doesn't turn negative. The exceptions are values that can be negative: the season
+    integrals and the PID sum of the external heater (the reference pump reads -150 and -6),
+    and unscaled temperatures;
+  - enums, bit fields and 32-bit counters are unsigned.
 - Scales are 1, 10 or 100 (the transmitted value is that many times larger). The map
   declares the inverse multiplier `modbus_connection` expects (`gauge(69, 0.01)` for 100).
 - 32-bit counters are split in an MSB and an LSB register and combined as

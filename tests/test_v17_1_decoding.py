@@ -87,3 +87,13 @@ async def test_reads_enums_of_the_reference_pump(mock_modbus_unit: MockModbusUni
 
     assert settings.outdoor_temperature_source is OutdoorTemperatureSource.PT1000_SENSOR
     assert settings.enabled_immersion_heater is ImmersionHeater.INTERNAL
+
+
+async def test_reads_count_above_32767_as_positive(mock_modbus_unit: MockModbusUnit) -> None:
+    # A timer can't be negative, so its register is unsigned.
+    mock_modbus_unit.input[60] = 40000
+    readings = HeatPumpUnitReadings(mock_modbus_unit)
+
+    await readings.async_update()
+
+    assert readings.compressor_start_restriction_timer == 40000

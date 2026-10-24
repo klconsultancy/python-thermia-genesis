@@ -13,9 +13,9 @@ class HeatPumpUnitReadings(Component):
 
     # Compressor
     compressor_available_gears = gauge(4, 0.01)
-    compressor_speed = integer(5, unit="rpm")
+    compressor_speed = integer(5, signed=False, unit="rpm")
     compressor_speed_percent = gauge(54, 0.01, unit="%")
-    compressor_start_restriction_timer = integer(60)
+    compressor_start_restriction_timer = integer(60, signed=False)
     compressor_current_gear = gauge(61, 0.01)
     compressor_operating_hours = uint32(48, unit="h")
     expansion_valve_opening_degree = gauge(315, 0.01, unit="%")
@@ -46,19 +46,20 @@ class HeatPumpUnitReadings(Component):
     brine_circulation_pump_speed = gauge(44, 0.01, unit="%")
     external_additional_heater_current_demand = gauge(6, 0.01, unit="%")
     external_additional_heater_operating_hours = uint32(52, unit="h")
-    internal_immersion_heater_active_step = integer(67)
+    internal_immersion_heater_active_step = integer(67, signed=False)
 
     # Power, seasons and smart grid
     current_power_output = gauge(157, 0.01, unit="kW")
     current_consumed_power = gauge(158, 0.01, unit="kW")
+    # Negative values have a meaning here, so these stay signed.
     cooling_season_integral_value = integer(36)
     heating_season_integral_value = integer(131)
     smart_grid_mode = enum(82, SmartGridMode)
 
     # Cascade: primary unit with Genesis secondaries
-    available_secondaries = integer(143)
-    total_distributed_gears = integer(145)
-    maximum_requested_gear = integer(146)
+    available_secondaries = integer(143, signed=False)
+    total_distributed_gears = integer(145, signed=False)
+    maximum_requested_gear = integer(146, signed=False)
     # One bit per secondary heat pump unit.
     secondaries_class_d_alarm = integer(160, signed=False)
     secondaries_communication_alarm = integer(161, signed=False)
@@ -66,9 +67,9 @@ class HeatPumpUnitReadings(Component):
     secondaries_class_b_alarm = integer(163, signed=False)
 
     # Control software version
-    software_version_major = integer(311)
-    software_version_minor = integer(312)
-    software_version_micro = integer(313)
+    software_version_major = integer(311, signed=False)
+    software_version_minor = integer(312, signed=False)
+    software_version_micro = integer(313, signed=False)
 
     # Alarms
     alarm_class_a = discrete_input(0)
@@ -129,9 +130,9 @@ class HeatPumpUnitSettings(Component):
     register_space = "holding"
 
     # Gears
-    minimum_allowed_gear_in_heating = integer(26)
-    maximum_allowed_gear_in_heating = integer(27)
-    gear_shift_delay_heating = integer(61, unit="min")
+    minimum_allowed_gear_in_heating = integer(26, signed=False)
+    maximum_allowed_gear_in_heating = integer(27, signed=False)
+    gear_shift_delay_heating = integer(61, signed=False, unit="min")
 
     # Brine limits
     brine_in_high_alarm_limit = gauge(67, 0.01, nan=ABSENT_SENSOR, unit="°C")
@@ -140,6 +141,7 @@ class HeatPumpUnitSettings(Component):
     brine_max_delta_limit = gauge(70, 0.01, unit="K")
 
     # External additional heater
+    # A PID sum, signed: the reference pump reads -6.
     external_additional_heater_start = integer(75)
     external_additional_heater_stop = gauge(78, 0.01)
     external_heater_outdoor_temperature_limit = gauge(304, 0.01, nan=ABSENT_SENSOR, unit="°C")
@@ -158,8 +160,8 @@ class HeatPumpUnitSettings(Component):
     bms_outdoor_temperature = gauge(118, 0.01, nan=ABSENT_SENSOR, unit="°C")
 
     # Current and power limitation
-    maximum_phase_current = integer(119, unit="A")
-    compressor_current_hysteresis = integer(120, unit="A")
+    maximum_phase_current = integer(119, signed=False, unit="A")
+    compressor_current_hysteresis = integer(120, signed=False, unit="A")
     # The meaning of each value depends on the mode (SG-Ready or PL/LU); see chapter 3.4.
     power_consumption_control_mode = integer(124, signed=False)
     input_power_limit = gauge(125, 0.1, unit="kW")
