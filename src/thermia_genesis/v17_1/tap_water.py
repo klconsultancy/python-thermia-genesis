@@ -8,15 +8,15 @@ from thermia_genesis.v17_1 import ABSENT_SENSOR
 class TapWaterCoils(Component):
     """Coils of tap water and HGW."""
 
-    # HGW coils are listed in chapter 6.2 only; see errata.md.
-    enable_hgw = coil(6)
+    # Both coils are listed only in chapter 6, not in chapter 3; see errata.md.
     enable_hot_gas_pump = coil(14)
+    enable_hgw = coil(6)
 
 
 class TapWaterDiscreteInputs(Component):
     """Discrete inputs of tap water and HGW."""
 
-    tap_water_mid_sensor_alarm = discrete_input(50)
+    mid_sensor_alarm = discrete_input(50)
     hgw_sensor_alarm = discrete_input(52)
     hgw_regulation_control_signal = discrete_input(223)
 
