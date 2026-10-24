@@ -131,13 +131,15 @@ pump.status.operational_mode
   register space (`coils`, `discrete_inputs`, `input_registers`, `holding_registers`): a
   failed read stops only its own space. Like `async_poll`, it raises `ModbusConnectionError`
   when the link is down, and `ModbusTimeoutError` when nothing has answered yet.
-- The firmware version (#9) and the optional subsystems (#10) build on this.
 
 ## Firmware and subsystem detection
 
-- The firmware version is read from input registers 311–313 (major, minor, micro).
-- On a major/minor version other than 17.1 the library still uses the 17.1 map; the Home
-  Assistant integration raises a repair issue.
+- The firmware version is read from input registers 311–313 (major, minor, micro), with
+  every update. `pump.firmware_version` is a `FirmwareVersion` named tuple (`str()` gives
+  "17.1.11", it compares as a tuple), or `None` until an update has read it.
+- On a major/minor version other than 17.1 the library still uses the 17.1 map;
+  `FirmwareVersion.supported` is then `False`, and the caller decides how to warn (the Home
+  Assistant integration raises a repair issue).
 - Optional subsystems are detected from their "Enable ..." coils: mix valve 1 coil 11, HGW
   coil 6, cooling coil 10 (active) or coil 33 (passive, EM), pool (EM) coil 28, and the
   electric meter coil 26 ("Enable current limitation"; chapter 9 requires the current

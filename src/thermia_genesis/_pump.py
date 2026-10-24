@@ -12,6 +12,7 @@ from modbus_connection.model import (
     read_optional,
 )
 
+from thermia_genesis.firmware import FirmwareVersion
 from thermia_genesis.subsystem import Space, Subsystem
 from thermia_genesis.v17_1.cooling import Cooling
 from thermia_genesis.v17_1.electric_meter import ElectricMeter
@@ -108,6 +109,20 @@ class ThermiaGenesis(Device):
             # One group per register space: adjacent registers of different subsystems share
             # a read, and a failed read stops only its own space.
             setattr(self, name, ComponentGroup(unit, components))
+
+    @property
+    def firmware_version(self) -> FirmwareVersion | None:
+        """The control software version, or ``None`` until an update has read it.
+
+        After a failed read the last value remains, like every field. The 17.1 map is used
+        whatever the version; check ``supported`` to warn.
+        """
+        major = self.heat_pump.software_version_major
+        minor = self.heat_pump.software_version_minor
+        micro = self.heat_pump.software_version_micro
+        if major is None or minor is None or micro is None:
+            return None
+        return FirmwareVersion(major, minor, micro)
 
     async def async_update(self) -> UpdateReport:
         """Read every register of the parts the pump has; the report names each space.
