@@ -42,8 +42,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   map is documented in the same register space with the same scale, and that each half of a
   32-bit value sits on the register the document labels MSB or LSB. The reverse direction
   (every documented register exists in the map) is added once the map is complete.
-- Contradictions in the documentation, and how we resolved them, are recorded in
-  [`errata.md`](errata.md). The real register dump of the reference pump decides.
+- Contradictions in the documentation, behaviour of the reference pump the documentation
+  doesn't describe, and how we handle each, are recorded in [`errata.md`](errata.md). The real register dump of the reference pump decides.
 
 ## Encoding
 
