@@ -48,10 +48,13 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   Assigning to a field raises `AttributeError` (and mypy rejects it) until the write API
   (#19). A subclass keeps the fields it inherits, so a later firmware can extend a
   subsystem of 17.1 instead of copying it.
-- Field names follow the document's description, without the subsystem as prefix: the
-  module already says it (`tap_water.TapWaterInputRegisters.top_temperature`, not
-  `tap_water_top_temperature`). A part within the subsystem keeps its prefix (`hgw_`,
-  `mix_valve_1_`), and so does a register named after another subsystem.
+- Field names follow the document's description, without the name of their own subsystem
+  as prefix: the class already says it (`pump.tap_water.top_temperature`, not
+  `tap_water_top_temperature`; `pump.mix_valve_1.position`). A register named after another
+  subsystem keeps that name (`tap_water_top_sensor_alarm` in the heat pump unit).
+- The optional parts mix valve 1 (chapter 5.2) and HGW (chapter 6.2) are subsystems of their
+  own (`MixValve1` in `heat`, `Hgw` in `tap_water`), so they can be left out like the other
+  optional subsystems.
 - The map is read-only for now: no field is declared writable. Writing coils and holding
   registers comes with the write API (#19, see Scope).
 - Chapters 4–9 list a few registers that chapter 3 doesn't (HGW, pool temperatures). They
@@ -114,7 +117,8 @@ pump.status.operational_mode
 ```
 
 - `ThermiaGenesis` is a `modbus_connection` `Device`. Its subsystems are `heat_pump`,
-  `heat`, `tap_water`, `cooling`, `pool`, `electric_meter` and `status`. A caller asks the
+  `heat`, `tap_water` and `status`, and the optional `mix_valve_1`, `hgw`, `cooling`, `pool`
+  and `electric_meter` (see below). A caller asks the
   subsystem for a value and never sees the register space it comes from. Every field is
   typed (`pump.heat.system_supply_line_temperature` is `float | None` for mypy); a test
   checks that with `assert_type`.
@@ -134,9 +138,17 @@ pump.status.operational_mode
 - The firmware version is read from input registers 311–313 (major, minor, micro).
 - On a major/minor version other than 17.1 the library still uses the 17.1 map; the Home
   Assistant integration raises a repair issue.
-- Optional subsystems are detected from their "Enable ..." coils: passive cooling (EM)
-  coil 33, active cooling coil 10, pool (EM) coil 28, mix valve 1 coil 11, and the electric
-  meter coil 26 ("Enable current limitation"; chapter 9 requires the current limiter).
+- Optional subsystems are detected from their "Enable ..." coils: mix valve 1 coil 11, HGW
+  coil 6, cooling coil 10 (active) or coil 33 (passive, EM), pool (EM) coil 28, and the
+  electric meter coil 26 ("Enable current limitation"; chapter 9 requires the current
+  limiter).
+- The first `async_update()` reads those six coils (the setup of `Device`) and creates only
+  the parts that are enabled. A part the pump doesn't have stays `None`, typed as for example
+  `Pool | None`, so mypy makes a caller handle it, and its registers are never read. The
+  detection runs once: a part enabled later appears after the integration reloads.
+- Each Enable coil is read on its own with `read_optional`. A coil the pump refuses (illegal
+  address or function; coil 6 is listed only in chapter 6) leaves out only its part, with a
+  log line. A lost connection or a timeout propagates, and the next update detects again.
 - The pump answers every address up to at least 5000 in all four register spaces, so a
   missing subsystem never shows up as an illegal-address exception. Values of a sensor the
   pump doesn't have decode as `None` (see Encoding).

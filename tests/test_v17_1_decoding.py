@@ -37,10 +37,12 @@ async def test_combines_lsb_before_msb_into_scaled_counter(
 ) -> None:
     # The electric meter total lists its LSB (83) before its MSB (84), at scale 10.
     mock_modbus_unit.input[83] = [4, 1]
+    mock_modbus_unit.coil[26] = True  # the meter is optional
     pump = ThermiaGenesis(mock_modbus_unit)
 
     await pump.async_update()
 
+    assert pump.electric_meter is not None
     assert pump.electric_meter.kwh_total == 6554.0
 
 
@@ -108,11 +110,13 @@ async def test_reads_count_above_32767_as_positive(mock_modbus_unit: MockModbusU
 async def test_reads_mix_valve_mode(mock_modbus_unit: MockModbusUnit) -> None:
     # Chapter 3.4, register 298: 0 Heat, 1 Cool, 2 Auto.
     mock_modbus_unit.holding[298] = 2
+    mock_modbus_unit.coil[11] = True  # mix valve 1 is optional
     pump = ThermiaGenesis(mock_modbus_unit)
 
     await pump.async_update()
 
-    assert pump.heat.mix_valve_1_mode is MixValveMode.AUTO
+    assert pump.mix_valve_1 is not None
+    assert pump.mix_valve_1.mode is MixValveMode.AUTO
 
 
 async def test_reads_operational_mode(mock_modbus_unit: MockModbusUnit) -> None:
@@ -150,8 +154,10 @@ async def test_reads_several_running_demands_as_flags(mock_modbus_unit: MockModb
 async def test_reads_negative_phase_power(mock_modbus_unit: MockModbusUnit) -> None:
     # A current limiter measures the house connection, so export can be negative.
     mock_modbus_unit.input[78] = 65036
+    mock_modbus_unit.coil[26] = True  # the meter is optional
     pump = ThermiaGenesis(mock_modbus_unit)
 
     await pump.async_update()
 
+    assert pump.electric_meter is not None
     assert pump.electric_meter.l1_power == -500
