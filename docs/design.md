@@ -15,8 +15,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   passive cooling.
 - Modbus TCP first. RTU is not excluded: `modbus-connection` already supports serial and
   RTU-over-TCP, so adding it is mostly config-flow work in the integration.
-- Read-only first. A write API is designed and tested in the library, but the Home
-  Assistant integration does not expose it until a later milestone.
+- Read-only first. A write API will be designed and tested in the library (#19), but the
+  Home Assistant integration does not expose it until a later milestone.
 
 ## Connection
 
@@ -33,7 +33,7 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   scale and unit. Chapters 4–9 are only used to group registers per subsystem. Enum and
   bit-flag values come from the footnotes.
 - Registers are **hand-written** with `modbus_connection.model` field types (`gauge`,
-  `integer(signed=True)`, `coil`, `discrete_input`, `enum`, ...). No CSV or code generator:
+  `integer`, `coil`, `discrete_input`, `enum`, ...). No CSV or code generator:
   the map is small enough that readable, reviewable code wins.
 - The `v17_1` package has one module per subsystem (`heat_pump_unit`, `heat`, `tap_water`,
   `cooling`, `pool`, `electric_meter`, `status`). Each module has one component per Modbus
