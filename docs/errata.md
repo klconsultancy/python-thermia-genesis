@@ -17,7 +17,7 @@ otherwise.
 | Coil 14 "Enable hot gas pump" and the HGW registers: coil 6 "Enable HGW", discrete 52 "HGW sensor alarm", discrete 223 "HGW regulation control signal", input 45 "HGW supply line temperature" | Listed only in chapter 6 (coil 14 in 6.1, the others in 6.2), not in chapter 3. The reference pump has no HGW: the coils and discrete inputs read `False`, input 45 reads 20000. | Mapped from chapter 6. |
 | Input register 47 | Chapter 6 lists it twice: as "Tap water valve position (%)" (as in chapter 3) and as "HGW mix valve position (%)". The reference pump reads 0. | "Tap water valve position" (chapter 3). |
 | Input registers 119–120 "Pool supply/return line temperature (EM)" | Listed in chapter 8 only, not in chapter 3 (holding 119–120 are different registers). The reference pump has no pool: both read 20000. | Mapped from chapter 8. |
-| Holding register 58 "Pool charge set point (EM)" | Unit `°C` in chapter 8, `%` in chapter 3. | `%` (chapter 3). To be verified on a pump with a pool. |
+| Holding register 58 "Pool charge set point (EM)" | Unit `°C` in chapter 8, `%` in chapter 3. The reference pump, which has no pool, reads 2600: 26.00, a typical pool temperature. | `°C` (chapter 8, supported by the dump), with `nan=ABSENT_SENSOR` like the other temperatures. To be verified on a pump with a pool. |
 | Input registers 83–84 "Electric meter kWh total" | LSB listed before MSB, the reverse of every other 32-bit pair. The reference pump has no electric meter (both read 0), so its dump cannot confirm the order. | LSB first, as documented. To be verified on a pump with an electric meter. |
 
 ## Document-wide
