@@ -43,7 +43,7 @@ ASSIGNED = {
 }
 
 # Subsystems whose registers are all in the map.
-COMPLETE = ["heat_pump_unit", "heat"]
+COMPLETE = ["heat_pump_unit", "heat", "tap_water"]
 
 
 class DocumentedRegister(NamedTuple):
