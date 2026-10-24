@@ -18,7 +18,6 @@ otherwise.
 | Topic | Issue | Resolution |
 | ----- | ----- | ---------- |
 | Scale 100 (chapter 2.1) | The scale table says the transmitted value is "a tenfold larger"; the worked example in the same section transmits -5 °C as -500. | Hundredfold (the worked example; the reference pump's discharge pipe reads 2667: 26.67 °C, not 266.7 °C). |
-| Electric meter (chapter 9) | No "Enable ..." coil to tell whether a meter is connected. | Absent when the L1–L3 voltages (input 72–74) all read 0; on the reference pump, which has no meter, all of input 69–84 read 0. To be verified on a pump with an electric meter. |
 | Footnotes | Printed at the end of chapter 9 instead of in their own chapter (as in 17.0). | Treated as document-wide footnotes. |
 
 ## Undocumented behaviour
@@ -28,4 +27,4 @@ Observed on the reference pump (firmware 17.1.11); the protocol document does no
 | Registers | Behaviour | Handling |
 | --------- | --------- | -------- |
 | Temperature input registers (scale 100) | A sensor the pump doesn't have reads 20000 (200.00 °C), with no sensor alarm. The reference pump reads it on 12, 27, 40 and 41 (system supply, system return, mix valve 1 supply, buffer tank) while 106 (cooling supply, passive cooling enabled) reads 2224. | 20000 decodes as no value (`nan=ABSENT_SENSOR`). |
-| Addresses chapter 3 doesn't list | Every address up to at least 5000 answers in all four spaces: undocumented ones read 0 or `False` (input 28, 999 and 5000, holding 999 and 5000, coils and discrete inputs 999 and 5000), input 14 reads 1150. Only far outside the map (65000) does the pump raise an illegal-address exception. | Missing subsystems are detected from their Enable coils, not from exceptions. |
+| Addresses chapter 3 doesn't list | Every address up to at least 5000 answers in all four spaces: undocumented ones read 0 or `False` (input 28, 999 and 5000, holding 999 and 5000, coils and discrete inputs 999 and 5000), except input 14, which reads 1150. It sits between outdoor (13) and tap water top (15), so it may be a temperature at scale 100 (11.50 °C). Only far outside the map (65000) does the pump raise an illegal-address exception. | Missing subsystems are detected from their Enable coils, not from exceptions. |
