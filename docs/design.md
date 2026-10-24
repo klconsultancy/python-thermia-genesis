@@ -83,3 +83,6 @@ possible. `async_update()` returns an `UpdateReport` so callers can tell which p
   turns merged commits into a release PR; merging it tags `vX.Y.Z`, creates a GitHub
   Release and publishes to TestPyPI and then PyPI via trusted publishing.
 - Development happens in the devcontainer; nothing has to be installed on the host.
+- Every change is made in a git worktree under `.worktrees/<branch>`, never in the main
+  checkout. Worktrees use relative paths (`worktree.useRelativePaths`) so they also work
+  inside the devcontainer, and each worktree has its own `.venv`.

@@ -4,13 +4,12 @@
     "dockerfile": "Dockerfile"
   },
   "containerEnv": {
-    "UV_LINK_MODE": "copy",
-    "UV_PROJECT_ENVIRONMENT": "/home/vscode/.venv"
+    "UV_LINK_MODE": "copy"
   },
   "mounts": [
     "source=thermia-genesis-uv-cache,target=/home/vscode/.cache/uv,type=volume"
   ],
-  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && uv sync && uv run prek install --overwrite",
+  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global --add safe.directory '${containerWorkspaceFolder}/.worktrees/*' && uv sync && uv run prek install --overwrite",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -24,7 +23,7 @@
         "github.vscode-pull-request-github"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/home/vscode/.venv/bin/python",
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
         "python.testing.pytestEnabled": true,
         "editor.formatOnSave": true,
         "[python]": {
