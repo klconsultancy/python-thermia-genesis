@@ -39,8 +39,7 @@ async def dump(unit: ModbusUnit) -> dict[str, Any]:
     """Read every register the pump has and return it raw and decoded.
 
     A register space whose read fails is left out and listed under ``failed``, keyed like
-    ``registers``. A lost
-    connection or a timeout propagates.
+    ``registers``. A lost connection or a timeout propagates.
     """
     pump = ThermiaGenesis(unit)
     await pump.async_ensure_setup()
