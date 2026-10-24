@@ -50,5 +50,5 @@ class CoolingHoldingRegisters(Component):
 
     # Cooling mix valve
     mix_valve_set_point = gauge(30, 0.01, unit="%")
-    supply_line_mix_valve_lowest_opening_degree = gauge(49, 0.01, unit="%")
-    supply_line_mix_valve_highest_opening_degree = gauge(50, 0.01, unit="%")
+    supply_line_mix_valve_lowest_allowed_opening_degree = gauge(49, 0.01, unit="%")
+    supply_line_mix_valve_highest_allowed_opening_degree = gauge(50, 0.01, unit="%")

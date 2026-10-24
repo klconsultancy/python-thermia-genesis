@@ -10,7 +10,7 @@ otherwise.
 | Register | Issue | Resolution |
 | -------- | ----- | ---------- |
 | Coil 25 "Enable additional heater only" | Scale 1 in chapter 3, scale 100 in chapter 4. | Scale 1 (chapter 3; coils are bits). |
-| Holding register 61 "Gear shift delay heating" | Unit listed as `min`; the reference pump reads 300, which as minutes is a five-hour delay. | Unit kept as documented. To be verified: seconds seem more likely. |
+| Holding registers 61–63 "Gear shift delay heating / pool / cooling" | Unit listed as `min`; the reference pump reads 300, 300 and 60, which as minutes are delays of five hours and one hour. | Unit kept as documented. To be verified: seconds seem more likely. |
 | Holding register 30 "Cooling mix valve set point (EM)" | Unit listed as `%`; the reference pump reads 1800 (18.00), which equals the cooling start temperature (holding 105, 18.00 °C). | Unit kept as documented. To be verified: it may be a temperature. |
 | Holding register 125 "Input power limit during Power Limitation" | The description calls itself "defacto 40125", but its de facto address is 40126; 40125 is register 124, whose own description refers to 40126 for the power limit. | Address 125 (the Address column). |
 | Input register 137 "Mix valve cooling opening degree (EM2/3)" | Chapter 7 lists the unit as `on/off` for an opening degree; chapter 3 lists `%`. | `%` (chapter 3). |
