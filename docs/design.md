@@ -144,8 +144,8 @@ pump.status.operational_mode
 - `registers` always holds the six Enable coils, also of absent parts, so a fixture answers
   them as the pump does (`False`, not a refusal).
 - The register spaces are read one by one. A space whose read fails is left out and listed
-  under `failed`; the JSON is still written and the exit status is 1. A lost connection or a
-  timeout ends the command with status 1 and no JSON.
+  under `failed` by the same space name as in `registers`; the JSON is still written and the
+  exit status is 1. A lost connection or a timeout ends the command with status 1 and no JSON.
 - Only mapped addresses are read. An undocumented address, such as input 14 in the errata,
   is checked with a separate read.
 

@@ -38,23 +38,24 @@ def _json_value(value: object) -> object:
 async def dump(unit: ModbusUnit) -> dict[str, Any]:
     """Read every register the pump has and return it raw and decoded.
 
-    A register space whose read fails is left out and listed under ``failed``. A lost
+    A register space whose read fails is left out and listed under ``failed``, keyed like
+    ``registers``. A lost
     connection or a timeout propagates.
     """
     pump = ThermiaGenesis(unit)
     await pump.async_ensure_setup()
     raw: dict[str, dict[int, int | bool]] = {}
     failed: dict[str, str] = {}
-    for name in GROUPS.values():
+    for space, name in GROUPS.items():
         try:
             registers = await getattr(pump, name).async_read_raw(notify=False)
         except (ModbusConnectionError, ModbusTimeoutError):
             raise
         except ModbusError as err:
-            failed[name] = str(err)
+            failed[space] = str(err)
             continue
-        for space, by_address in registers.items():
-            raw.setdefault(space, {}).update(by_address)
+        for read_space, by_address in registers.items():
+            raw.setdefault(read_space, {}).update(by_address)
     # The Enable coils of absent parts too, so a fixture answers them as the pump does.
     coils = raw.setdefault("coil", {})
     for address in ENABLE_COILS:

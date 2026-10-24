@@ -72,7 +72,7 @@ async def test_dump_records_a_space_that_fails(mock_modbus_unit: MockModbusUnit)
 
     dump = await cli.dump(mock_modbus_unit)
 
-    assert list(dump["failed"]) == ["input_registers"]
+    assert list(dump["failed"]) == ["input"]
     assert "input" not in dump["registers"]
     assert dump["values"]["status"]["operational_mode"] == "ON_AUTO"
 
@@ -139,7 +139,7 @@ def test_main_writes_the_dump_but_fails_when_a_space_fails(
 
     assert cli.main(["dump", "192.0.2.10", "--output", str(output)]) == 1
 
-    assert list(json.loads(output.read_text())["failed"]) == ["input_registers"]
+    assert list(json.loads(output.read_text())["failed"]) == ["input"]
 
 
 def test_main_reports_a_modbus_error(
