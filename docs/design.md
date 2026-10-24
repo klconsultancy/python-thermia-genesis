@@ -81,7 +81,9 @@ possible. `async_update()` returns an `UpdateReport` so callers can tell which p
 - Strict TDD: red, green, refactor. CI enforces 100% line and branch coverage.
 - Every change goes through a pull request with a Conventional Commits title. release-please
   turns merged commits into a release PR; merging it tags `vX.Y.Z`, creates a GitHub
-  Release and publishes to TestPyPI and then PyPI via trusted publishing.
+  Release and publishes to PyPI via trusted publishing, after a manual approval on the
+  `pypi` environment. There is no TestPyPI step: CI runs `twine check --strict` on every
+  build, and a bad release can be yanked and replaced by a patch release.
 - Development happens in the devcontainer; nothing has to be installed on the host.
 - Every change is made in a git worktree under `.worktrees/<branch>`, never in the main
   checkout. Worktrees use relative paths (`worktree.useRelativePaths`) so they also work
