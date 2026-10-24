@@ -43,7 +43,7 @@ ASSIGNED = {
 }
 
 # Subsystems whose registers are all in the map.
-COMPLETE = ["heat_pump_unit", "heat", "tap_water", "cooling"]
+COMPLETE = ["heat_pump_unit", "heat", "tap_water", "cooling", "pool"]
 
 
 class DocumentedRegister(NamedTuple):
@@ -95,7 +95,7 @@ CHAPTER_ERRATA = {
     ("07-cooling.md", ("input", 137)): "unit on/off for an opening degree",
     ("08-pool.md", ("input", 119)): "not in chapter 3",
     ("08-pool.md", ("input", 120)): "not in chapter 3",
-    ("08-pool.md", ("holding", 58)): "unit °C instead of %",
+    ("08-pool.md", ("holding", 58)): "unit °C, where chapter 3 says %",
 }
 
 # Registers documented only in chapters 4-9 count as documented too (see errata.md).
@@ -105,6 +105,10 @@ DOCUMENTED = ADDRESS_LIST | {
     for key, register in read_rows(PROTOCOL / chapter)
     if (chapter, key) in CHAPTER_ERRATA and key not in ADDRESS_LIST
 }
+
+# Units the errata take from another source than chapter 3.
+UNIT_ERRATA = {("holding", 58): "°C"}  # chapter 8; the reference pump reads 26.00
+DOCUMENTED |= {key: DOCUMENTED[key]._replace(unit=unit) for key, unit in UNIT_ERRATA.items()}
 
 
 def documented_subsystems() -> dict[Key, str]:
