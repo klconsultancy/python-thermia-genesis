@@ -24,3 +24,11 @@ class ImmersionHeater(IntEnum):
 
     DISABLED = 0
     INTERNAL = 2
+
+
+class MixValveMode(IntEnum):
+    """Selected mode for mixing valve 1 (holding register 298)."""
+
+    HEAT = 0
+    COOL = 1
+    AUTO = 2

@@ -1,8 +1,13 @@
 from modbus_connection.mock import MockModbusUnit
 
 from thermia_genesis.v17_1.electric_meter import ElectricMeterInputRegisters
-from thermia_genesis.v17_1.enums import ImmersionHeater, OutdoorTemperatureSource, SmartGridMode
-from thermia_genesis.v17_1.heat import HeatInputRegisters
+from thermia_genesis.v17_1.enums import (
+    ImmersionHeater,
+    MixValveMode,
+    OutdoorTemperatureSource,
+    SmartGridMode,
+)
+from thermia_genesis.v17_1.heat import HeatHoldingRegisters, HeatInputRegisters
 from thermia_genesis.v17_1.heat_pump_unit import (
     HeatPumpUnitCoils,
     HeatPumpUnitDiscreteInputs,
@@ -102,3 +107,13 @@ async def test_reads_count_above_32767_as_positive(mock_modbus_unit: MockModbusU
     await registers.async_update()
 
     assert registers.compressor_start_restriction_timer == 40000
+
+
+async def test_reads_mix_valve_mode(mock_modbus_unit: MockModbusUnit) -> None:
+    # Chapter 3.4, register 298: 0 Heat, 1 Cool, 2 Auto.
+    mock_modbus_unit.holding[298] = 2
+    registers = HeatHoldingRegisters(mock_modbus_unit)
+
+    await registers.async_update()
+
+    assert registers.mix_valve_1_mode is MixValveMode.AUTO
