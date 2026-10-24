@@ -45,6 +45,9 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   from those declarations (`HeatCoils`, `HeatDiscreteInputs`, `HeatInputRegisters`,
   `HeatHoldingRegisters`), so a component holds one space, as `modbus_connection` requires.
   Each declared field is a typed descriptor that reads its value from that component.
+  Assigning to a field raises `AttributeError` (and mypy rejects it) until the write API
+  (#19). A subclass keeps the fields it inherits, so a later firmware can extend a
+  subsystem of 17.1 instead of copying it.
 - Field names follow the document's description, without the subsystem as prefix: the
   module already says it (`tap_water.TapWaterInputRegisters.top_temperature`, not
   `tap_water_top_temperature`). A part within the subsystem keeps its prefix (`hgw_`,

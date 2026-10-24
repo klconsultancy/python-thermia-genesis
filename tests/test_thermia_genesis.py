@@ -10,10 +10,11 @@ from modbus_connection.exceptions import (
     ModbusTimeoutError,
 )
 from modbus_connection.mock import MockModbusUnit
+from modbus_connection.model import gauge
 from modbus_connection.model.fields import CoilField, DiscreteInputField
 
 from thermia_genesis import ThermiaGenesis, v17_1
-from thermia_genesis.subsystem import Subsystem
+from thermia_genesis.subsystem import Subsystem, input_register
 from thermia_genesis.v17_1.enums import OperationalMode
 from thermia_genesis.v17_1.heat import Heat
 
@@ -148,3 +149,29 @@ def test_subsystem_class_gives_the_field_declaration() -> None:
 
     assert declaration.space == "input"
     assert declaration.field.address == 12
+
+
+def test_fields_are_read_only(mock_modbus_unit: MockModbusUnit) -> None:
+    # mypy rejects the assignment too; the ignore would be unused otherwise.
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    with pytest.raises(AttributeError, match="read-only"):
+        pump.tap_water.top_temperature = 99.0  # type: ignore[assignment]
+
+
+class HeatWithExtraRegister(Heat):
+    """A later firmware that adds a register to heat."""
+
+    extra_temperature = input_register(gauge(500, 0.01))
+
+
+async def test_subclass_keeps_the_fields_it_inherits(mock_modbus_unit: MockModbusUnit) -> None:
+    mock_modbus_unit.input[12] = 2214
+    mock_modbus_unit.input[500] = 1234
+    heat = HeatWithExtraRegister(mock_modbus_unit)
+
+    for component in heat.components.values():
+        await component.async_update()
+
+    assert heat.system_supply_line_temperature == 22.14
+    assert heat.extra_temperature == 12.34

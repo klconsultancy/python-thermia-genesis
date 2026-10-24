@@ -10,7 +10,7 @@ The class builds one ``modbus_connection`` component per register space it uses,
 field reads its value from that component. Callers see typed attributes only.
 """
 
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Never, NoReturn, overload
 
 from modbus_connection import ModbusUnit
 from modbus_connection.model import Component
@@ -57,6 +57,11 @@ class Field[T]:
             return self
         return getattr(obj.components[self.space], self.name)  # type: ignore[attr-defined]
 
+    def __set__(self, obj: object, value: Never) -> NoReturn:
+        """Refuse assignment: the map is read-only until the write API (#19)."""
+        msg = f"{self.name} is read-only"
+        raise AttributeError(msg)
+
 
 def coil(address: int) -> Field[bool]:
     """Declare a coil (FC01) of the subsystem."""
@@ -88,9 +93,11 @@ class Subsystem:
         """Build one component class per register space from the declared fields."""
         super().__init_subclass__(**kwargs)
         fields: dict[Space, dict[str, Any]] = {}
-        for name, value in vars(cls).items():
-            if isinstance(value, Field):
-                fields.setdefault(value.space, {})[name] = value.field
+        # Base classes first, so a subclass keeps the fields it inherits and can redeclare one.
+        for klass in reversed(cls.__mro__):
+            for name, value in vars(klass).items():
+                if isinstance(value, Field):
+                    fields.setdefault(value.space, {})[name] = value.field
         cls.component_types = {
             space: type(
                 f"{cls.__name__}{COMPONENT_SUFFIXES[space]}",
