@@ -29,7 +29,10 @@ jobs:
           pyproject=$(sed -nE 's|^required-version = "==([0-9.]+)"$|\1|p' pyproject.toml)
           hook=$(grep -A1 'astral-sh/uv-pre-commit' .pre-commit-config.yaml | sed -nE 's|^ *rev: ([0-9.]+)$|\1|p')
           echo "Dockerfile: $docker, pyproject.toml: $pyproject, .pre-commit-config.yaml: $hook"
-          [ -n "$docker" ] && [ "$docker" = "$pyproject" ] && [ "$docker" = "$hook" ]
+          if [ -z "$docker" ] || [ "$docker" != "$pyproject" ] || [ "$docker" != "$hook" ]; then
+            echo "::error::uv versions differ: Dockerfile '$docker', pyproject.toml '$pyproject', .pre-commit-config.yaml '$hook'"
+            exit 1
+          fi
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           python-version: "3.13"
