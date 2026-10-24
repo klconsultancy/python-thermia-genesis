@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import logging
 import pkgutil
 from typing import assert_type
 
@@ -151,6 +152,27 @@ async def test_detects_a_part_from_its_enable_coil(
     await pump.async_update()
 
     assert [name for name in OPTIONAL if getattr(pump, name) is not None] == [part]
+
+
+async def test_treats_a_refused_enable_coil_as_absent(
+    mock_modbus_unit: MockModbusUnit, caplog: pytest.LogCaptureFixture
+) -> None:
+    # Coil 6 (HGW) is listed only in chapter 6, so another pump may refuse it.
+    caplog.set_level(logging.INFO)
+    enable_every_part(mock_modbus_unit)
+    mock_modbus_unit.fail_read(6, IllegalDataAddressError(), register_type="coil")
+    mock_modbus_unit.holding[0] = 3
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    report = await pump.async_update()
+
+    assert report.complete
+    assert pump.hgw is None
+    assert [name for name in OPTIONAL if getattr(pump, name) is not None] == [
+        name for name in OPTIONAL if name != "hgw"
+    ]
+    assert pump.status.operational_mode is OperationalMode.ON_AUTO
+    assert "coil 6" in caplog.text
 
 
 async def test_detects_the_parts_once(mock_modbus_unit: MockModbusUnit) -> None:

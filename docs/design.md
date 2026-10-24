@@ -146,6 +146,9 @@ pump.status.operational_mode
   the parts that are enabled. A part the pump doesn't have stays `None`, typed as for example
   `Pool | None`, so mypy makes a caller handle it, and its registers are never read. The
   detection runs once: a part enabled later appears after the integration reloads.
+- Each Enable coil is read on its own with `read_optional`. A coil the pump refuses (illegal
+  address or function; coil 6 is listed only in chapter 6) leaves out only its part, with a
+  log line. A lost connection or a timeout propagates, and the next update detects again.
 - The pump answers every address up to at least 5000 in all four register spaces, so a
   missing subsystem never shows up as an illegal-address exception. Values of a sensor the
   pump doesn't have decode as `None` (see Encoding).

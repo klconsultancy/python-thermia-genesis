@@ -1,7 +1,16 @@
 """The public entry point: a Genesis heat pump on a Modbus unit."""
 
+import logging
+
 from modbus_connection import ModbusUnit
-from modbus_connection.model import Component, ComponentGroup, Device, UpdateReport, coil
+from modbus_connection.model import (
+    Component,
+    ComponentGroup,
+    Device,
+    UpdateReport,
+    coil,
+    read_optional,
+)
 
 from thermia_genesis.subsystem import Space, Subsystem
 from thermia_genesis.v17_1.cooling import Cooling
@@ -21,15 +30,26 @@ GROUPS: dict[Space, str] = {
 }
 
 
-class EnableCoils(Component):
-    """The coils that tell which optional parts the installation has (docs/design.md)."""
+_LOGGER = logging.getLogger(__name__)
 
-    hgw = coil(6)
-    active_cooling = coil(10)
-    mix_valve_1 = coil(11)
-    current_limitation = coil(26)
-    pool = coil(28)
-    passive_cooling = coil(33)
+
+class EnableCoil(Component):
+    """One "Enable ..." coil, placed at its address with ``base_offset``."""
+
+    enabled = coil(0)
+
+
+async def is_enabled(unit: ModbusUnit, address: int) -> bool:
+    """Whether the Enable coil at ``address`` is on; a coil the pump refuses is off.
+
+    A refusal (illegal address or function) means the pump doesn't have the part. Any other
+    error, such as a lost connection or a timeout, propagates, and the next update retries.
+    """
+    enable_coil = EnableCoil(unit, base_offset=address)
+    if await read_optional(enable_coil) is None:
+        _LOGGER.info("The pump refuses Enable coil %d; treating its part as absent", address)
+        return False
+    return bool(enable_coil.enabled)
 
 
 class ThermiaGenesis(Device):
@@ -56,18 +76,16 @@ class ThermiaGenesis(Device):
     async def _async_setup(self) -> None:
         """Detect the optional parts from their Enable coils, once."""
         unit = self.modbus_unit
-        enabled = EnableCoils(unit)
-        enabled.max_gap = 0  # read only mapped coils
-        await enabled.async_update()
-        if enabled.mix_valve_1:
+        # Each coil on its own, so a coil the pump refuses leaves out only its part.
+        if await is_enabled(unit, 11):
             self.mix_valve_1 = MixValve1(unit)
-        if enabled.hgw:
+        if await is_enabled(unit, 6):
             self.hgw = Hgw(unit)
-        if enabled.active_cooling or enabled.passive_cooling:
+        if await is_enabled(unit, 10) or await is_enabled(unit, 33):  # active or passive
             self.cooling = Cooling(unit)
-        if enabled.pool:
+        if await is_enabled(unit, 28):
             self.pool = Pool(unit)
-        if enabled.current_limitation:
+        if await is_enabled(unit, 26):  # current limitation
             self.electric_meter = ElectricMeter(unit)
         subsystems: list[Subsystem | None] = [
             self.heat_pump,
