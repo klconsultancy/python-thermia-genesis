@@ -1043,6 +1043,8 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
     { name = "thermia-genesis", extra = ["tmodbus"] },
+]
+release = [
     { name = "twine" },
 ]
 
@@ -1062,8 +1064,8 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
     { name = "thermia-genesis", extras = ["tmodbus"] },
-    { name = "twine" },
 ]
+release = [{ name = "twine" }]
 
 [[package]]
 name = "tmodbus"

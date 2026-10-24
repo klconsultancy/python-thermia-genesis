@@ -42,8 +42,9 @@ dev = [
   "pytest-cov",
   "ruff",
   "thermia-genesis[tmodbus]",
-  "twine",
 ]
+# Not a default group: only the CI build job needs it.
+release = ["twine"]
 
 [tool.uv]
 required-version = "==0.13.5"
