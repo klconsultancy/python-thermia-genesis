@@ -1,6 +1,14 @@
 # thermia-genesis
 
 [![CI](https://github.com/klconsultancy/python-thermia-genesis/actions/workflows/ci.yml/badge.svg)](https://github.com/klconsultancy/python-thermia-genesis/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/thermia-genesis)](https://pypi.org/project/thermia-genesis/)
+[![Python versions](https://img.shields.io/pypi/pyversions/thermia-genesis)](https://pypi.org/project/thermia-genesis/)
+[![License: MIT](https://img.shields.io/github/license/klconsultancy/python-thermia-genesis)](LICENSE)
+[![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)](pyproject.toml)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Checked with mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org/)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 Async Python library for Thermia heat pumps on the **Genesis** platform (Atlas, Calibra,
 Calibra E, Calibra Cool, Calibra RXT, Diplomat Inverter), using Modbus via
