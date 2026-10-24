@@ -10,6 +10,8 @@ otherwise.
 | Register | Issue | Resolution |
 | -------- | ----- | ---------- |
 | Coil 25 "Enable additional heater only" | Scale 1 in chapter 3, scale 100 in chapter 4. | Scale 1 (chapter 3; coils are bits). |
+| Holding register 61 "Gear shift delay heating" | Unit listed as `min`; the reference pump reads 300, which as minutes is a five-hour delay. | Unit kept as documented. To be verified: seconds seem more likely. |
+| Holding register 125 "Input power limit during Power Limitation" | The description calls itself "defacto 40125", but its de facto address is 40126; 40125 is register 124, whose own description refers to 40126 for the power limit. | Address 125 (the Address column). |
 | Input register 137 "Mix valve cooling opening degree (EM2/3)" | Unit listed as `on/off` for an opening degree. | To be verified against a register dump. |
 | Input registers 83–84 "Electric meter kWh total" | LSB listed before MSB, the reverse of every other 32-bit pair. The reference pump has no electric meter (both read 0), so its dump cannot confirm the order. | LSB first, as documented. To be verified on a pump with an electric meter. |
 
@@ -27,4 +29,5 @@ Observed on the reference pump (firmware 17.1.11); the protocol document does no
 | Registers | Behaviour | Handling |
 | --------- | --------- | -------- |
 | Temperature input registers (scale 100) | A sensor the pump doesn't have reads 20000 (200.00 °C), with no sensor alarm. The reference pump reads it on 12, 27, 40 and 41 (system supply, system return, mix valve 1 supply, buffer tank) while 106 (cooling supply, passive cooling enabled) reads 2224. | 20000 decodes as no value (`nan=ABSENT_SENSOR`). |
+| Holding register 118 "Outdoor temperature sensor" | Reads 20000 (200.00 °C) when no BMS provides the outdoor temperature (register 117 is 0). | Decodes as no value (`nan=ABSENT_SENSOR`), like an absent sensor. |
 | Addresses chapter 3 doesn't list | Every address up to at least 5000 answers in all four spaces: undocumented ones read 0 or `False` (input 28, 999 and 5000, holding 999 and 5000, coils and discrete inputs 999 and 5000), except input 14, which reads 1150. It sits between outdoor (13) and tap water top (15), so it may be a temperature at scale 100 (11.50 °C). Only far outside the map (65000) does the pump raise an illegal-address exception. | Missing subsystems are detected from their Enable coils, not from exceptions. |

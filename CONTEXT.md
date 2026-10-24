@@ -26,6 +26,10 @@ input registers 30001, holding registers 40001). The library uses the zero-based
 : A temperature sensor the installation doesn't have. Its input register reads 20000
 (200.00 °C) instead of raising a sensor alarm; the library decodes it as no value (`None`).
 
+**Readings / Settings**
+: The two components of a subsystem in the register map: *readings* are read-only (input
+registers and discrete inputs), *settings* are read/write (holding registers and coils).
+
 **Subsystem**
 : A functional part of the installation, matching chapters 4–9 of the protocol document:
 heat pump unit, heat, tap water, cooling, pool and electric meter.
