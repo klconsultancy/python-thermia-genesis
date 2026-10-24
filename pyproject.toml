@@ -25,6 +25,9 @@ classifiers = [
 ]
 dependencies = ["modbus-connection>=4.12.6,<5"]
 
+[project.scripts]
+thermia-genesis = "thermia_genesis.cli:main"
+
 [project.optional-dependencies]
 tmodbus = ["modbus-connection[tmodbus]>=4.12.6,<5"]
 

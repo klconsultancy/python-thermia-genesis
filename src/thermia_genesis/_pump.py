@@ -53,6 +53,21 @@ async def is_enabled(unit: ModbusUnit, address: int) -> bool:
     return bool(enable_coil.enabled)
 
 
+# The subsystem attributes of ThermiaGenesis, and the optional ones among them.
+SUBSYSTEMS = (
+    "heat_pump",
+    "heat",
+    "mix_valve_1",
+    "tap_water",
+    "hgw",
+    "cooling",
+    "pool",
+    "electric_meter",
+    "status",
+)
+OPTIONAL_PARTS = ("mix_valve_1", "hgw", "cooling", "pool", "electric_meter")
+
+
 class ThermiaGenesis(Device):
     """A Thermia heat pump on the Genesis platform, firmware 17.1.
 

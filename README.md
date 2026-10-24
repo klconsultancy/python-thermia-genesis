@@ -53,6 +53,15 @@ asyncio.run(main())
 
 The library only reads; it never writes to the pump.
 
+### Dump a pump
+
+`thermia-genesis dump` reads every register the pump has and writes JSON: the firmware, the
+optional parts it found, the raw registers and the decoded values. Attach it to a bug report.
+
+```sh
+thermia-genesis dump 192.0.2.10 --output pump.json
+```
+
 ## Development
 
 Changes are made in git worktrees under `.worktrees/`, and the tools run in the

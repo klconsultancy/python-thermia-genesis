@@ -132,6 +132,16 @@ pump.status.operational_mode
   failed read stops only its own space. Like `async_poll`, it raises `ModbusConnectionError`
   when the link is down, and `ModbusTimeoutError` when nothing has answered yet.
 
+## Dump CLI
+
+- `thermia-genesis dump <target>` (`thermia_genesis.cli`) takes the connection arguments of
+  `modbus_connection.cli_helper` (TCP or serial) and `--unit` (default 1).
+- It reads what `ThermiaGenesis` reads, so only mapped addresses of the parts the pump has.
+  It writes one JSON object: `firmware`, `parts` (which optional parts are present),
+  `registers` (raw values per register space, for test fixtures) and `values` (decoded per
+  subsystem; an enum as its name, a flag as the names of its members). It never writes to
+  the pump.
+
 ## Firmware and subsystem detection
 
 - The firmware version is read from input registers 311–313 (major, minor, micro), with
