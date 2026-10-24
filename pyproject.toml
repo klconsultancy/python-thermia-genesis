@@ -1,0 +1,88 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "thermia-genesis"
+version = "0.0.0"
+description = "Async Python library for Thermia heat pumps on the Genesis platform via Modbus"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Kristof Lemmens" }]
+requires-python = ">=3.12"
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Framework :: AsyncIO",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Home Automation",
+  "Typing :: Typed",
+]
+dependencies = ["modbus-connection>=4.12.6,<5"]
+
+[project.optional-dependencies]
+tmodbus = ["modbus-connection[tmodbus]>=4.12.6,<5"]
+
+[project.urls]
+Homepage = "https://github.com/klconsultancy/python-thermia-genesis"
+Issues = "https://github.com/klconsultancy/python-thermia-genesis/issues"
+Changelog = "https://github.com/klconsultancy/python-thermia-genesis/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = [
+  "modbus-connection[tmodbus]>=4.12.6,<5",
+  "mypy",
+  "prek",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "ruff",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "docs/protocol"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "COM812", # conflicts with the formatter
+  "CPY",    # no per-file copyright headers; the license is in LICENSE
+  "D203",   # incompatible with D211
+  "D213",   # incompatible with D212
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+  "D",       # test names document themselves
+  "PLR2004", # magic values are expected in assertions
+  "S101",    # assert is how pytest works
+]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "--strict-markers --cov --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["thermia_genesis"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = true
