@@ -22,6 +22,10 @@ input registers 30001, holding registers 40001). The library uses the zero-based
 **MSB / LSB**
 : The high and low 16-bit halves of a 32-bit counter, stored in two registers.
 
+**Absent sensor**
+: A temperature sensor the installation doesn't have. Its input register reads 20000
+(200.00 °C) instead of raising a sensor alarm; the library decodes it as no value (`None`).
+
 **Subsystem**
 : A functional part of the installation, matching chapters 4–9 of the protocol document:
 heat pump unit, heat, tap water, cooling, pool and electric meter.

@@ -11,6 +11,7 @@ from modbus_connection.model import Component
 from modbus_connection.model.fields import CoilField, DiscreteInputField, NumberField
 
 from thermia_genesis import v17_1
+from thermia_genesis.v17_1 import ABSENT_SENSOR
 
 ADDRESS_LIST = Path(__file__).parents[1] / "docs/protocol/17.1/03-address-list.md"
 
@@ -19,6 +20,7 @@ SPACES = {"3.1": "coil", "3.2": "discrete", "3.3": "input", "3.4": "holding"}
 
 
 class DocumentedRegister(NamedTuple):
+    unit: str
     scale: int
     description: str
 
@@ -33,7 +35,7 @@ def documented_registers() -> dict[tuple[str, int], DocumentedRegister]:
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
         if len(cells) != 7 or not cells[3].isdigit():
             continue  # not a register row: prose, header or separator
-        registers[space, int(cells[3])] = DocumentedRegister(int(cells[5]), cells[6])
+        registers[space, int(cells[3])] = DocumentedRegister(cells[1], int(cells[5]), cells[6])
     return registers
 
 
@@ -45,6 +47,7 @@ class MappedRegister(NamedTuple):
     address: int
     scale: int
     half: str | None = None  # "MSB" or "LSB" for one word of a 32-bit value
+    nan: frozenset[int] | None = None  # raw values that decode as no value
 
 
 def mapped_registers() -> dict[str, list[MappedRegister]]:
@@ -62,11 +65,14 @@ def mapped_registers() -> dict[str, list[MappedRegister]]:
             else:
                 # The map stores the multiplier (0.01); the document the divisor (100).
                 scale = round(1 / getattr(field, "scale", 1.0))
+                nan = getattr(field, "nan", None)
                 halves: list[str | None] = [None] * field.count
                 if isinstance(field, NumberField) and field.count == 2:
                     halves = ["MSB", "LSB"] if field.word_order == "big" else ["LSB", "MSB"]
                 mapped[key] = [
-                    MappedRegister(component.register_space, field.address + offset, scale, half)
+                    MappedRegister(
+                        component.register_space, field.address + offset, scale, half, nan
+                    )
                     for offset, half in enumerate(halves)
                 ]
     return mapped
@@ -83,7 +89,7 @@ def test_reads_every_table_of_the_address_list() -> None:
 
 def test_finds_the_mapped_registers() -> None:
     # Without this, an empty map would skip the parametrized check instead of failing.
-    assert len(MAPPED) == 4
+    assert MAPPED
 
 
 @pytest.mark.parametrize("name", sorted(MAPPED))
@@ -98,3 +104,6 @@ def test_mapped_register_matches_address_list(name: str) -> None:
         else:
             # A half of a 32-bit value read on its own wraps at 65535.
             assert not documented.description.endswith(("(MSB)", "(LSB)")), documented.description
+        if (register.space, documented.unit, documented.scale) == ("input", "°C", 100):
+            assert register.nan is not None, documented.description
+            assert ABSENT_SENSOR in register.nan, documented.description
