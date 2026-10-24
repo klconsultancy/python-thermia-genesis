@@ -62,7 +62,7 @@ def mapped_registers() -> dict[str, list[MappedRegister]]:
             else:
                 # The map stores the multiplier (0.01); the document the divisor (100).
                 scale = round(1 / getattr(field, "scale", 1.0))
-                halves: list[str | None] = [None]
+                halves: list[str | None] = [None] * field.count
                 if isinstance(field, NumberField) and field.count == 2:
                     halves = ["MSB", "LSB"] if field.word_order == "big" else ["LSB", "MSB"]
                 mapped[key] = [
@@ -81,6 +81,11 @@ def test_reads_every_table_of_the_address_list() -> None:
     assert per_space == {"coil": 26, "discrete": 68, "input": 99, "holding": 66}
 
 
+def test_finds_the_mapped_registers() -> None:
+    # Without this, an empty map would skip the parametrized check instead of failing.
+    assert len(MAPPED) == 3
+
+
 @pytest.mark.parametrize("name", sorted(MAPPED))
 def test_mapped_register_matches_address_list(name: str) -> None:
     for register in MAPPED[name]:
@@ -90,3 +95,6 @@ def test_mapped_register_matches_address_list(name: str) -> None:
         assert register.scale == documented.scale, documented.description
         if register.half:
             assert documented.description.endswith(f"({register.half})"), documented.description
+        else:
+            # A half of a 32-bit value read on its own wraps at 65535.
+            assert not documented.description.endswith(("(MSB)", "(LSB)")), documented.description
