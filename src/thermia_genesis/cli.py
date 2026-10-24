@@ -14,9 +14,16 @@ from typing import Any
 
 from modbus_connection import ModbusUnit
 from modbus_connection.cli_helper import add_connection_args, connect_from_args
-from modbus_connection.exceptions import ModbusError
+from modbus_connection.exceptions import ModbusConnectionError, ModbusError, ModbusTimeoutError
 
-from thermia_genesis._pump import GROUPS, OPTIONAL_PARTS, SUBSYSTEMS, ThermiaGenesis
+from thermia_genesis._pump import (
+    ENABLE_COILS,
+    GROUPS,
+    OPTIONAL_PARTS,
+    SUBSYSTEMS,
+    ThermiaGenesis,
+    read_enable_coil,
+)
 
 
 def _json_value(value: object) -> object:
@@ -29,9 +36,30 @@ def _json_value(value: object) -> object:
 
 
 async def dump(unit: ModbusUnit) -> dict[str, Any]:
-    """Read every register the pump has and return it raw and decoded."""
+    """Read every register the pump has and return it raw and decoded.
+
+    A register space whose read fails is left out and listed under ``failed``. A lost
+    connection or a timeout propagates.
+    """
     pump = ThermiaGenesis(unit)
-    raw = await pump.async_read_raw(GROUPS.values())
+    await pump.async_ensure_setup()
+    raw: dict[str, dict[int, int | bool]] = {}
+    failed: dict[str, str] = {}
+    for name in GROUPS.values():
+        try:
+            registers = await getattr(pump, name).async_read_raw(notify=False)
+        except (ModbusConnectionError, ModbusTimeoutError):
+            raise
+        except ModbusError as err:
+            failed[name] = str(err)
+            continue
+        for space, by_address in registers.items():
+            raw.setdefault(space, {}).update(by_address)
+    # The Enable coils of absent parts too, so a fixture answers them as the pump does.
+    coils = raw.setdefault("coil", {})
+    for address in ENABLE_COILS:
+        if address not in coils and (enabled := await read_enable_coil(unit, address)) is not None:
+            coils[address] = enabled
     values: dict[str, dict[str, object]] = {}
     for name in SUBSYSTEMS:
         subsystem = getattr(pump, name)
@@ -47,10 +75,11 @@ async def dump(unit: ModbusUnit) -> dict[str, Any]:
         "firmware": None if firmware is None else str(firmware),
         "parts": {name: getattr(pump, name) is not None for name in OPTIONAL_PARTS},
         "registers": {
-            space: {str(address): value for address, value in registers.items()}
+            space: {str(address): registers[address] for address in sorted(registers)}
             for space, registers in raw.items()
         },
         "values": values,
+        "failed": failed,
     }
 
 
@@ -89,4 +118,5 @@ def main(argv: Sequence[str] | None = None) -> int:
         sys.stdout.write(text)
     else:
         args.output.write_text(text, encoding="utf-8")
-    return 0
+    # The dump is written either way; a space that failed is in it under "failed".
+    return 1 if result["failed"] else 0

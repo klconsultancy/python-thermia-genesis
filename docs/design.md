@@ -138,9 +138,16 @@ pump.status.operational_mode
   `modbus_connection.cli_helper` (TCP or serial) and `--unit` (default 1).
 - It reads what `ThermiaGenesis` reads, so only mapped addresses of the parts the pump has.
   It writes one JSON object: `firmware`, `parts` (which optional parts are present),
-  `registers` (raw values per register space, for test fixtures) and `values` (decoded per
-  subsystem; an enum as its name, a flag as the names of its members). It never writes to
-  the pump.
+  `registers` (raw values per register space, for test fixtures), `values` (decoded per
+  subsystem; an enum as its name, a flag as the names of its members) and `failed`. It never
+  writes to the pump.
+- `registers` always holds the six Enable coils, also of absent parts, so a fixture answers
+  them as the pump does (`False`, not a refusal).
+- The register spaces are read one by one. A space whose read fails is left out and listed
+  under `failed`; the JSON is still written and the exit status is 1. A lost connection or a
+  timeout ends the command with status 1 and no JSON.
+- Only mapped addresses are read. An undocumented address, such as input 14 in the errata,
+  is checked with a separate read.
 
 ## Firmware and subsystem detection
 
