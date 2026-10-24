@@ -40,8 +40,8 @@ class EnableCoil(Component):
     enabled = coil(0)
 
 
-async def is_enabled(unit: ModbusUnit, address: int) -> bool:
-    """Whether the Enable coil at ``address`` is on; a coil the pump refuses is off.
+async def read_enable_coil(unit: ModbusUnit, address: int) -> bool | None:
+    """Read the Enable coil at ``address``; ``None`` if the pump refuses it.
 
     A refusal (illegal address or function) means the pump doesn't have the part. Any other
     error, such as a lost connection or a timeout, propagates, and the next update retries.
@@ -49,8 +49,33 @@ async def is_enabled(unit: ModbusUnit, address: int) -> bool:
     enable_coil = EnableCoil(unit, base_offset=address)
     if await read_optional(enable_coil) is None:
         _LOGGER.info("The pump refuses Enable coil %d; treating its part as absent", address)
-        return False
+        return None
     return bool(enable_coil.enabled)
+
+
+# The subsystem attributes of ThermiaGenesis, and the optional ones among them.
+SUBSYSTEMS = (
+    "heat_pump",
+    "heat",
+    "mix_valve_1",
+    "tap_water",
+    "hgw",
+    "cooling",
+    "pool",
+    "electric_meter",
+    "status",
+)
+# Each optional part, its subsystem and its Enable coils: the part is present when one of
+# them is on (docs/design.md). Cooling is active (coil 10) or passive (coil 33).
+PARTS: dict[str, tuple[type[Subsystem], tuple[int, ...]]] = {
+    "mix_valve_1": (MixValve1, (11,)),
+    "hgw": (Hgw, (6,)),
+    "cooling": (Cooling, (10, 33)),
+    "pool": (Pool, (28,)),
+    "electric_meter": (ElectricMeter, (26,)),
+}
+OPTIONAL_PARTS = tuple(PARTS)
+ENABLE_COILS = tuple(sorted(address for _, addresses in PARTS.values() for address in addresses))
 
 
 class ThermiaGenesis(Device):
@@ -77,17 +102,12 @@ class ThermiaGenesis(Device):
     async def _async_setup(self) -> None:
         """Detect the optional parts from their Enable coils, once."""
         unit = self.modbus_unit
-        # Each coil on its own, so a coil the pump refuses leaves out only its part.
-        if await is_enabled(unit, 11):
-            self.mix_valve_1 = MixValve1(unit)
-        if await is_enabled(unit, 6):
-            self.hgw = Hgw(unit)
-        if await is_enabled(unit, 10) or await is_enabled(unit, 33):  # active or passive
-            self.cooling = Cooling(unit)
-        if await is_enabled(unit, 28):
-            self.pool = Pool(unit)
-        if await is_enabled(unit, 26):  # current limitation
-            self.electric_meter = ElectricMeter(unit)
+        for name, (subsystem_type, addresses) in PARTS.items():
+            # Each coil on its own, so a coil the pump refuses leaves out only its part.
+            for address in addresses:
+                if await read_enable_coil(unit, address):
+                    setattr(self, name, subsystem_type(unit))
+                    break
         subsystems: list[Subsystem | None] = [
             self.heat_pump,
             self.heat,
