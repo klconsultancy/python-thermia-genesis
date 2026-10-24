@@ -37,10 +37,14 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   `integer`, `coil`, `discrete_input`, `enum`, ...). No CSV or code generator:
   the map is small enough that readable, reviewable code wins.
 - The `v17_1` package has one module per subsystem (`heat_pump_unit`, `heat`, `tap_water`,
-  `cooling`, `pool`, `electric_meter`, `status`). Each module has one component per Modbus
-  register space it uses, named after it: `HeatPumpUnitCoils`, `HeatPumpUnitDiscreteInputs`,
-  `HeatPumpUnitInputRegisters`, `HeatPumpUnitHoldingRegisters`. This mirrors the tables of
-  chapter 3. Enums from the footnotes live in `v17_1.enums`.
+  `cooling`, `pool`, `electric_meter`, `status`), each with one `Subsystem` class
+  (`HeatPumpUnit`, `Heat`, ...). It declares every field once, wrapped in its register space:
+  `coil(11)`, `discrete_input(220)`, `input_register(gauge(12, ...))`,
+  `holding_register(gauge(5, ...))`. Enums from the footnotes live in `v17_1.enums`.
+- `thermia_genesis.subsystem` builds one `modbus_connection` component per register space
+  from those declarations (`HeatCoils`, `HeatDiscreteInputs`, `HeatInputRegisters`,
+  `HeatHoldingRegisters`), so a component holds one space, as `modbus_connection` requires.
+  Each declared field is a typed descriptor that reads its value from that component.
 - Field names follow the document's description, without the subsystem as prefix: the
   module already says it (`tap_water.TapWaterInputRegisters.top_temperature`, not
   `tap_water_top_temperature`). A part within the subsystem keeps its prefix (`hgw_`,
@@ -107,19 +111,19 @@ pump.status.operational_mode
 ```
 
 - `ThermiaGenesis` is a `modbus_connection` `Device`. Its subsystems are `heat_pump`,
-  `heat`, `tap_water`, `cooling`, `pool`, `electric_meter` and `status`. Each one is a
-  `Subsystem` that passes on the fields of its components, whatever register space they are
-  read from. A field name is unique within its subsystem.
-- `async_update()` reads every component in one `ComponentGroup`, so adjacent registers
+  `heat`, `tap_water`, `cooling`, `pool`, `electric_meter` and `status`. A caller asks the
+  subsystem for a value and never sees the register space it comes from. Every field is
+  typed (`pump.heat.system_supply_line_temperature` is `float | None` for mypy); a test
+  checks that with `assert_type`.
+- `async_update()` reads with one `ComponentGroup` per register space, so adjacent registers
   share a read, also across subsystems. A read never bridges a gap (`max_gap = 0`): it
   touches only mapped addresses. The reference pump answers any address, but another model
-  or firmware may refuse one the document doesn't list, and that would fail the whole read.
-  The whole map takes 68 block reads, about 0.4 s on the reference pump (bridging the gaps
-  would take 9 reads and 0.1 s).
-- `async_update()` returns the `UpdateReport` of `Device.async_poll`, with the single entry
-  `registers`, so a read fails as a whole. Like
-  `async_poll`, it raises `ModbusConnectionError` when the link is down, and
-  `ModbusTimeoutError` when nothing has answered yet.
+  or firmware may refuse one the document doesn't list. The whole map takes 68 block reads,
+  about 0.4 s on the reference pump (bridging the gaps would take 9 reads and 0.1 s).
+- `async_update()` returns the `UpdateReport` of `Device.async_poll`, with one entry per
+  register space (`coils`, `discrete_inputs`, `input_registers`, `holding_registers`): a
+  failed read stops only its own space. Like `async_poll`, it raises `ModbusConnectionError`
+  when the link is down, and `ModbusTimeoutError` when nothing has answered yet.
 - The firmware version (#9) and the optional subsystems (#10) build on this.
 
 ## Firmware and subsystem detection

@@ -1,16 +1,21 @@
 import importlib
 import inspect
 import pkgutil
+from typing import assert_type
 
 import pytest
-from modbus_connection.exceptions import IllegalDataAddressError
+from modbus_connection.exceptions import (
+    IllegalDataAddressError,
+    ModbusConnectionError,
+    ModbusTimeoutError,
+)
 from modbus_connection.mock import MockModbusUnit
-from modbus_connection.model import Component
 from modbus_connection.model.fields import CoilField, DiscreteInputField
 
-from thermia_genesis import Subsystem, ThermiaGenesis, v17_1
+from thermia_genesis import ThermiaGenesis, v17_1
+from thermia_genesis.subsystem import Subsystem
 from thermia_genesis.v17_1.enums import OperationalMode
-from thermia_genesis.v17_1.heat import HeatInputRegisters
+from thermia_genesis.v17_1.heat import Heat
 
 SUBSYSTEMS = ["heat_pump", "heat", "tap_water", "cooling", "pool", "electric_meter", "status"]
 
@@ -40,11 +45,22 @@ async def test_reads_every_subsystem(mock_modbus_unit: MockModbusUnit) -> None:
     assert pump.electric_meter.enable_current_limitation is False
 
 
+def test_fields_are_typed(mock_modbus_unit: MockModbusUnit) -> None:
+    # mypy checks these: a field typed as Any fails assert_type.
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    assert_type(pump.heat.system_supply_line_temperature, float | None)
+    assert_type(pump.heat_pump.compressor_operating_hours, int | None)
+    assert_type(pump.status.operational_mode, OperationalMode | None)
+    assert_type(pump.cooling.enable_passive_cooling, bool | None)
+    assert_type(pump.heat.heating_season_active, bool | None)
+
+
 def mapped_addresses(pump: ThermiaGenesis) -> set[tuple[str, int]]:
     """Every address the map declares, per register space."""
     addresses = set()
     for subsystem in SUBSYSTEMS:
-        for component in getattr(pump, subsystem).components:
+        for component in getattr(pump, subsystem).components.values():
             for field in component.declared_fields.values():
                 if isinstance(field, CoilField):
                     addresses.add(("coil", field.address))
@@ -71,49 +87,64 @@ async def test_reads_only_the_mapped_addresses(mock_modbus_unit: MockModbusUnit)
     assert read == mapped_addresses(pump)
 
 
-async def test_reports_a_failed_read(mock_modbus_unit: MockModbusUnit) -> None:
+async def test_a_failed_read_stops_only_its_register_space(
+    mock_modbus_unit: MockModbusUnit,
+) -> None:
     mock_modbus_unit.fail_read(48, IllegalDataAddressError(), register_type="input")
+    mock_modbus_unit.holding[0] = 3
+    mock_modbus_unit.coil[9] = True
     pump = ThermiaGenesis(mock_modbus_unit)
 
     report = await pump.async_update()
 
-    assert not report.complete
-    assert isinstance(report.failed["registers"], IllegalDataAddressError)
+    assert set(report.failed) == {"input_registers"}
+    assert report.updated == {"coils", "discrete_inputs", "holding_registers"}
+    assert pump.status.operational_mode is OperationalMode.ON_AUTO
+    assert pump.heat_pump.enable_heat is True
 
 
-def test_subsystem_has_no_unknown_fields(mock_modbus_unit: MockModbusUnit) -> None:
+async def test_raises_when_the_link_is_down(mock_modbus_unit: MockModbusUnit) -> None:
+    mock_modbus_unit.fail_read(0, ModbusConnectionError(), register_type="holding")
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    with pytest.raises(ModbusConnectionError):
+        await pump.async_update()
+
+
+async def test_raises_when_nothing_answers(mock_modbus_unit: MockModbusUnit) -> None:
+    # The coils are read first; a timeout before anything answered means a dead link.
+    mock_modbus_unit.fail_read(3, ModbusTimeoutError(), register_type="coil")
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    with pytest.raises(ModbusTimeoutError):
+        await pump.async_update()
+
+
+def test_has_no_unknown_fields(mock_modbus_unit: MockModbusUnit) -> None:
     pump = ThermiaGenesis(mock_modbus_unit)
 
     with pytest.raises(AttributeError, match="no_such_field"):
-        _ = pump.heat.no_such_field
+        _ = pump.heat.no_such_field  # type: ignore[attr-defined]
 
 
-def test_subsystem_refuses_a_field_name_twice(mock_modbus_unit: MockModbusUnit) -> None:
-    components = [HeatInputRegisters(mock_modbus_unit), HeatInputRegisters(mock_modbus_unit)]
-
-    with pytest.raises(ValueError, match="system_supply_line_temperature"):
-        Subsystem(components)
-
-
-def test_exposes_every_field_of_the_map(mock_modbus_unit: MockModbusUnit) -> None:
+def test_has_every_subsystem_of_the_map(mock_modbus_unit: MockModbusUnit) -> None:
     pump = ThermiaGenesis(mock_modbus_unit)
-    # The subsystem attribute of each module; the heat pump unit is pump.heat_pump.
-    attributes = {"heat_pump_unit": "heat_pump"}
-    missing = []
+    declared = set()
     for module_info in pkgutil.iter_modules(v17_1.__path__):
         module = importlib.import_module(f"{v17_1.__name__}.{module_info.name}")
-        subsystem = getattr(pump, attributes.get(module_info.name, module_info.name), None)
-        for component in vars(module).values():
-            if not (
-                inspect.isclass(component)
-                and issubclass(component, Component)
-                and component.__module__ == module.__name__
-            ):
-                continue
-            missing += [
-                f"{module_info.name}.{name}"
-                for name in component.declared_fields
-                if not any(isinstance(c, component) for c in getattr(subsystem, "components", []))
-            ]
+        declared |= {
+            member
+            for member in vars(module).values()
+            if inspect.isclass(member)
+            and issubclass(member, Subsystem)
+            and member.__module__ == module.__name__
+        }
 
-    assert missing == []
+    assert {type(getattr(pump, name)) for name in SUBSYSTEMS} == declared
+
+
+def test_subsystem_class_gives_the_field_declaration() -> None:
+    declaration = Heat.system_supply_line_temperature
+
+    assert declaration.space == "input"
+    assert declaration.field.address == 12
