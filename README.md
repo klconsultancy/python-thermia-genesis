@@ -3,6 +3,7 @@
 [![CI](https://github.com/klconsultancy/python-thermia-genesis/actions/workflows/ci.yml/badge.svg)](https://github.com/klconsultancy/python-thermia-genesis/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/thermia-genesis)](https://pypi.org/project/thermia-genesis/)
 [![Python versions](https://img.shields.io/pypi/pyversions/thermia-genesis)](https://pypi.org/project/thermia-genesis/)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/klconsultancy/python-thermia-genesis/badge)](https://scorecard.dev/viewer/?uri=github.com/klconsultancy/python-thermia-genesis)
 [![License: MIT](https://img.shields.io/github/license/klconsultancy/python-thermia-genesis)](LICENSE)
 [![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)](pyproject.toml)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
