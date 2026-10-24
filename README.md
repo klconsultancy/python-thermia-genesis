@@ -43,7 +43,7 @@ async def main() -> None:
         # On Modbus TCP the Genesis controller ignores the unit id.
         pump = ThermiaGenesis(connection.for_unit(1))
         report = await pump.async_update()
-        print(report.complete, pump.heat_pump.outdoor_temperature)
+        print(report.complete, pump.firmware_version, pump.heat_pump.outdoor_temperature)
     finally:
         await connection.close()
 
