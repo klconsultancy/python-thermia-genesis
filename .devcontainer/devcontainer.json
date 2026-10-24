@@ -1,0 +1,40 @@
+{
+  "name": "python-thermia-genesis",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "containerEnv": {
+    "UV_LINK_MODE": "copy",
+    "UV_PROJECT_ENVIRONMENT": "/home/vscode/.venv"
+  },
+  "mounts": [
+    "source=thermia-genesis-uv-cache,target=/home/vscode/.cache/uv,type=volume"
+  ],
+  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && uv sync && uv run prek install --overwrite",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.mypy-type-checker",
+        "ryanluker.vscode-coverage-gutters",
+        "tamasfe.even-better-toml",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/home/vscode/.venv/bin/python",
+        "python.testing.pytestEnabled": true,
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+          }
+        }
+      }
+    }
+  }
+}
