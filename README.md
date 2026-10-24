@@ -25,6 +25,34 @@ This library powers the [Thermia Genesis Home Assistant integration](https://git
 pip install "thermia-genesis[tmodbus]"
 ```
 
+## Usage
+
+```python
+import asyncio
+
+from modbus_connection import ModbusTcpParams
+from modbus_connection.tmodbus import ModbusConnection
+
+from thermia_genesis import ThermiaGenesis
+
+
+async def main() -> None:
+    connection = ModbusConnection(ModbusTcpParams(host="192.0.2.10"), timeout=5)
+    await connection.connect()
+    try:
+        # On Modbus TCP the Genesis controller ignores the unit id.
+        pump = ThermiaGenesis(connection.for_unit(1))
+        report = await pump.async_update()
+        print(report.complete, pump.heat_pump.outdoor_temperature)
+    finally:
+        await connection.close()
+
+
+asyncio.run(main())
+```
+
+The library only reads; it never writes to the pump.
+
 ## Development
 
 Changes are made in git worktrees under `.worktrees/`, and the tools run in the

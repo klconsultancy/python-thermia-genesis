@@ -28,7 +28,8 @@ input registers 30001, holding registers 40001). The library uses the zero-based
 
 **Subsystem**
 : A functional part of the installation, matching chapters 4–9 of the protocol document:
-heat pump unit, heat, tap water, cooling, pool and electric meter.
+heat pump unit, heat, tap water, cooling, pool and electric meter, plus status (the
+operational mode and the demands). In the library a `Subsystem` holds the fields of one.
 
 **EM (extension module)**
 : Optional hardware (EM, EM2, EM3) that adds circuits such as passive cooling. Registers

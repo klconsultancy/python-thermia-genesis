@@ -1,19 +1,22 @@
 """Cooling (chapter 7): cooling and the cooling circuit."""
 
-from modbus_connection.model import Component, coil, discrete_input, gauge, integer
+from modbus_connection.model import gauge, integer
 
+from thermia_genesis.subsystem import (
+    Subsystem,
+    coil,
+    discrete_input,
+    holding_register,
+    input_register,
+)
 from thermia_genesis.v17_1 import ABSENT_SENSOR
 
 
-class CoolingCoils(Component):
-    """Coils of cooling."""
+class Cooling(Subsystem):
+    """The cooling subsystem."""
 
     enable_active_cooling = coil(10)
     enable_passive_cooling = coil(33)
-
-
-class CoolingDiscreteInputs(Component):
-    """Discrete inputs of cooling."""
 
     # Alarms
     supply_line_sensor_alarm = discrete_input(47)
@@ -26,29 +29,21 @@ class CoolingDiscreteInputs(Component):
     circuit_regulation_control_signal = discrete_input(240)
     active_cooling_directional_valve_position = discrete_input(242)
 
+    circuit_supply_line_temperature = input_register(gauge(106, 0.01, nan=ABSENT_SENSOR, unit="°C"))
+    mix_valve_opening_degree = input_register(integer(137, signed=False, unit="%"))
+    desired_gear = input_register(integer(141, signed=False))
 
-class CoolingInputRegisters(Component):
-    """Input registers of cooling."""
-
-    register_space = "input"
-
-    circuit_supply_line_temperature = gauge(106, 0.01, nan=ABSENT_SENSOR, unit="°C")
-    mix_valve_opening_degree = integer(137, signed=False, unit="%")
-    desired_gear = integer(141, signed=False)
-
-
-class CoolingHoldingRegisters(Component):
-    """Holding registers of cooling."""
-
-    register_space = "holding"
-
-    start_temperature = gauge(105, 0.01, nan=ABSENT_SENSOR, unit="°C")
-    stop_temperature = gauge(106, 0.01, nan=ABSENT_SENSOR, unit="°C")
-    gear_shift_delay = integer(63, signed=False, unit="min")
-    minimum_allowed_gear = integer(87, signed=False)
-    maximum_allowed_gear = integer(88, signed=False)
+    start_temperature = holding_register(gauge(105, 0.01, nan=ABSENT_SENSOR, unit="°C"))
+    stop_temperature = holding_register(gauge(106, 0.01, nan=ABSENT_SENSOR, unit="°C"))
+    gear_shift_delay = holding_register(integer(63, signed=False, unit="min"))
+    minimum_allowed_gear = holding_register(integer(87, signed=False))
+    maximum_allowed_gear = holding_register(integer(88, signed=False))
 
     # Cooling mix valve
-    mix_valve_set_point = gauge(30, 0.01, unit="%")
-    supply_line_mix_valve_lowest_allowed_opening_degree = gauge(49, 0.01, unit="%")
-    supply_line_mix_valve_highest_allowed_opening_degree = gauge(50, 0.01, unit="%")
+    mix_valve_set_point = holding_register(gauge(30, 0.01, unit="%"))
+    supply_line_mix_valve_lowest_allowed_opening_degree = holding_register(
+        gauge(49, 0.01, unit="%")
+    )
+    supply_line_mix_valve_highest_allowed_opening_degree = holding_register(
+        gauge(50, 0.01, unit="%")
+    )

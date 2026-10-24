@@ -12,6 +12,7 @@ from modbus_connection.model import Component
 from modbus_connection.model.fields import CoilField, DiscreteInputField, NumberField
 
 from thermia_genesis import v17_1
+from thermia_genesis.subsystem import Subsystem
 from thermia_genesis.v17_1 import ABSENT_SENSOR
 
 PROTOCOL = Path(__file__).parents[1] / "docs/protocol/17.1"
@@ -137,11 +138,12 @@ def components() -> list[tuple[str, type[Component]]]:
     for module_info in pkgutil.iter_modules(v17_1.__path__):
         module = importlib.import_module(f"{v17_1.__name__}.{module_info.name}")
         found += [
-            (module_info.name, member)
+            (module_info.name, component)
             for member in vars(module).values()
             if inspect.isclass(member)
-            and issubclass(member, Component)
+            and issubclass(member, Subsystem)
             and member.__module__ == module.__name__
+            for component in member.component_types.values()
         ]
     return found
 
