@@ -31,6 +31,6 @@ class Pool(Subsystem):
     charge_set_point = holding_register(gauge(58, 0.01, nan=ABSENT_SENSOR, unit="°C"))
     return_temperature_to_heat_exchanger_set_point = holding_register(gauge(299, 0.1, unit="°C"))
     hysteresis_set_point = holding_register(gauge(300, 0.1, unit="K"))
-    gear_shift_delay = holding_register(integer(62, signed=False, unit="min"))
+    gear_shift_delay = holding_register(integer(62, signed=False, unit="s"))
     minimum_allowed_gear = holding_register(integer(85, signed=False))
     maximum_allowed_gear = holding_register(integer(86, signed=False))

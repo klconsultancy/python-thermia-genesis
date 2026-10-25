@@ -35,12 +35,14 @@ class Cooling(Subsystem):
 
     start_temperature = holding_register(gauge(105, 0.01, nan=ABSENT_SENSOR, unit="°C"))
     stop_temperature = holding_register(gauge(106, 0.01, nan=ABSENT_SENSOR, unit="°C"))
-    gear_shift_delay = holding_register(integer(63, signed=False, unit="min"))
+    gear_shift_delay = holding_register(integer(63, signed=False, unit="s"))
     minimum_allowed_gear = holding_register(integer(87, signed=False))
     maximum_allowed_gear = holding_register(integer(88, signed=False))
 
     # Cooling mix valve
-    mix_valve_set_point = holding_register(gauge(30, 0.01, unit="%"))
+    # A temperature, not % as chapter 3 says: the display's "Gewenste koelaanvoer min."
+    # (desired cooling supply minimum); see errata.md.
+    mix_valve_set_point = holding_register(gauge(30, 0.01, nan=ABSENT_SENSOR, unit="°C"))
     supply_line_mix_valve_lowest_allowed_opening_degree = holding_register(
         gauge(49, 0.01, unit="%")
     )

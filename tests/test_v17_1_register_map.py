@@ -108,7 +108,15 @@ DOCUMENTED = ADDRESS_LIST | {
 }
 
 # Units the errata take from another source than chapter 3.
-UNIT_ERRATA = {("holding", 58): "°C"}  # chapter 8; the reference pump reads 26.00
+UNIT_ERRATA = {
+    ("holding", 58): "°C",  # chapter 8; the reference pump reads 26.00
+    # The display setting "Gewenste koelaanvoer min." (°C) changes holding 30, not 105.
+    ("holding", 30): "°C",
+    # The display shows 300 as "0:05:00", so the gear shift delays are in seconds.
+    ("holding", 61): "s",
+    ("holding", 62): "s",
+    ("holding", 63): "s",
+}
 DOCUMENTED |= {key: DOCUMENTED[key]._replace(unit=unit) for key, unit in UNIT_ERRATA.items()}
 
 
@@ -323,3 +331,24 @@ def test_chapter_agrees_with_address_list(chapter: str) -> None:
     }
 
     assert differing == {key for (name, key) in CHAPTER_ERRATA if name == chapter}
+
+
+# What the "Units" column holds for values without a physical unit.
+NOT_A_UNIT = {"", "enum", "bitfield", "step", "on/off", "active/ inactive"}
+
+
+def field_units() -> list[tuple[str, int, str | None]]:
+    """Space, address and declared unit of every register field in the map."""
+    return [
+        (component.register_space, field.address, getattr(field, "unit", None))
+        for _, component in components()
+        for field in component.declared_fields.values()
+        if not isinstance(field, (CoilField, DiscreteInputField))
+    ]
+
+
+@pytest.mark.parametrize(("space", "address", "unit"), field_units(), ids=str)
+def test_field_has_the_documented_unit(space: str, address: int, unit: str | None) -> None:
+    documented = DOCUMENTED[space, address]
+    if documented.unit not in NOT_A_UNIT:
+        assert unit == documented.unit, documented.description
