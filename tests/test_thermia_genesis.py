@@ -252,6 +252,51 @@ async def test_leaves_out_a_register_the_pump_refuses(
     assert "input register 13 (heat_pump.outdoor_temperature)" in caplog.text
 
 
+async def test_a_timeout_while_looking_for_refused_registers_fails_only_its_space(
+    mock_modbus_unit: MockModbusUnit,
+) -> None:
+    mock_modbus_unit.fail_read(13, IllegalDataAddressError(), register_type="input")
+    mock_modbus_unit.fail_read(15, ModbusTimeoutError(), register_type="input")
+    mock_modbus_unit.holding[0] = 3
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    report = await pump.async_update()
+
+    assert isinstance(report.failed["input_registers"], ModbusTimeoutError)
+    assert report.updated == {"coils", "discrete_inputs", "holding_registers"}
+    assert pump.status.operational_mode is OperationalMode.ON_AUTO
+
+
+async def test_a_lost_link_while_looking_for_refused_registers_raises(
+    mock_modbus_unit: MockModbusUnit,
+) -> None:
+    mock_modbus_unit.fail_read(13, IllegalDataAddressError(), register_type="input")
+    mock_modbus_unit.fail_read(15, ModbusConnectionError(), register_type="input")
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    with pytest.raises(ModbusConnectionError):
+        await pump.async_update()
+
+
+async def test_summarizes_a_space_the_pump_refuses_entirely(
+    mock_modbus_unit: MockModbusUnit, caplog: pytest.LogCaptureFixture
+) -> None:
+    pump = ThermiaGenesis(mock_modbus_unit)
+    for space, address in mapped_addresses(
+        [pump.heat_pump, pump.heat, pump.tap_water, pump.status]
+    ):
+        if space == "discrete":
+            mock_modbus_unit.fail_read(address, IllegalFunctionError(), register_type="discrete")
+
+    report = await pump.async_update()
+
+    assert report.complete
+    refusals = [r for r in caplog.records if "discrete input" in r.getMessage()]
+    assert [r.getMessage() for r in refusals] == [
+        "The pump refuses every discrete input; reading them as None"
+    ]
+
+
 async def test_looks_for_refused_registers_once(mock_modbus_unit: MockModbusUnit) -> None:
     # A pump that refuses nothing reads one update in `baseline` reads.
     clean = MockModbusConnection().for_unit(1)

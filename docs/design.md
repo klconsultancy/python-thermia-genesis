@@ -139,8 +139,10 @@ pump.status.operational_mode
 - A register the pump refuses (illegal address or function) doesn't take its space down. On
   such a refusal the library reads each field of that space on its own, once, leaves out the
   fields the pump refuses (`restrict_fields`: they read `None`, with a warning naming the
-  register and the field), and reads the space again in the same update. Any other error
-  still fails the space. One refused register made ~400 entities unavailable in another
+  register and the field, or one warning if the pump refuses the whole space), and reads the
+  space again in the same update. Any other error still fails the space; one during that
+  search fails only the space too, and the next update searches again. Only a lost
+  connection raises. One refused register made ~400 entities unavailable in another
   integration (CJNE/pythermiagenesis#8). The dump command keeps reporting a refusal under
   `failed`, since a bug report needs to show it.
 

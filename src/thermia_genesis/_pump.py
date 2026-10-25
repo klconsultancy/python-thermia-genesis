@@ -3,7 +3,12 @@
 import logging
 
 from modbus_connection import ModbusUnit
-from modbus_connection.exceptions import IllegalDataAddressError, IllegalFunctionError
+from modbus_connection.exceptions import (
+    IllegalDataAddressError,
+    IllegalFunctionError,
+    ModbusConnectionError,
+    ModbusError,
+)
 from modbus_connection.model import (
     Component,
     ComponentGroup,
@@ -192,29 +197,48 @@ class ThermiaGenesis(Device):
         """
         report = await self.async_poll(GROUPS.values())
         refused = [name for name, err in report.failed.items() if isinstance(err, REFUSALS)]
+        retry = []
         for name in refused:
-            await self._leave_out_refused_fields(name)
-            del report.failed[name]
-        if refused:
-            await self.async_poll(refused, report)
+            error = await self._leave_out_refused_fields(name)
+            if error is None:
+                del report.failed[name]
+                retry.append(name)
+            else:
+                report.failed[name] = error
+        if retry:
+            await self.async_poll(retry, report)
         return report
 
-    async def _leave_out_refused_fields(self, group: str) -> None:
-        """Read each field of ``group`` on its own and leave out those the pump refuses."""
+    async def _leave_out_refused_fields(self, group: str) -> ModbusError | None:
+        """Read each field of ``group`` on its own and leave out those the pump refuses.
+
+        Returns the error that stopped the search, or ``None``. A lost connection propagates.
+        """
+        kept: dict[Component, list[str]] = {}
+        refused: list[str] = []
         for subsystem_name, component in self._members[group]:
-            kept = []
+            kept[component] = []
             for name, field in component.declared_fields.items():
                 probe = type(component)(self.modbus_unit)
                 probe.restrict_fields([name])
-                if await read_optional(probe) is None:
-                    _LOGGER.warning(
-                        "The pump refuses %s %d (%s.%s); reading it as None",
-                        GROUP_LABELS[group],
-                        field.address,
-                        subsystem_name,
-                        name,
+                try:
+                    answered = await read_optional(probe)
+                except ModbusConnectionError:
+                    raise
+                except ModbusError as err:
+                    return err  # nothing is left out on a partial search
+                if answered is None:
+                    refused.append(
+                        f"{GROUP_LABELS[group]} {field.address} ({subsystem_name}.{name})"
                     )
                 else:
-                    kept.append(name)
-            if len(kept) < len(component.declared_fields):
-                component.restrict_fields(kept)
+                    kept[component].append(name)
+        if not any(kept.values()):
+            _LOGGER.warning("The pump refuses every %s; reading them as None", GROUP_LABELS[group])
+        else:
+            for description in refused:
+                _LOGGER.warning("The pump refuses %s; reading it as None", description)
+        for component, names in kept.items():
+            if len(names) < len(component.declared_fields):
+                component.restrict_fields(names)
+        return None
