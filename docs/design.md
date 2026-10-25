@@ -22,6 +22,10 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
 
 - Built on [`modbus-connection`](https://home-assistant-libs.github.io/modbus-connection/)
   with the `tmodbus` backend, the same stack Home Assistant core uses.
+- Home Assistant's `modbus` integration pins an exact `modbus-connection` version per
+  release, and the integration installs the library next to it. So the library requires a
+  wide range (`>=4.12.3,<5`, the version of Home Assistant 2026.10.0), and CI also runs the
+  tests on that lower bound. Raise it only when the library needs a newer feature.
 - The library never owns a connection. Every API takes a `ModbusUnit`; the caller (Home
   Assistant's `modbus` integration, a script, a test) creates and closes the connection.
 - On Modbus TCP the Genesis controller ignores the unit id; we use unit id 1.
