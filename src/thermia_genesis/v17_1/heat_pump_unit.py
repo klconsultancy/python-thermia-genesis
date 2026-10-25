@@ -9,7 +9,7 @@ from thermia_genesis.subsystem import (
     holding_register,
     input_register,
 )
-from thermia_genesis.v17_1 import ABSENT_SENSOR
+from thermia_genesis.v17_1 import ABSENT_SENSOR, ABSENT_SENSOR_AT_SCALE_10
 from thermia_genesis.v17_1.enums import ImmersionHeater, OutdoorTemperatureSource, SmartGridMode
 
 
@@ -103,7 +103,7 @@ class HeatPumpUnit(Subsystem):
     brine_in_temperature = input_register(gauge(10, 0.01, nan=ABSENT_SENSOR, unit="°C"))
     brine_out_temperature = input_register(gauge(11, 0.01, nan=ABSENT_SENSOR, unit="°C"))
     outdoor_temperature = input_register(gauge(13, 0.01, nan=ABSENT_SENSOR, unit="°C"))
-    room_temperature = input_register(gauge(121, 0.1, unit="°C"))
+    room_temperature = input_register(gauge(121, 0.1, nan=ABSENT_SENSOR_AT_SCALE_10, unit="°C"))
     liquid_line_temperature = input_register(gauge(129, 0.01, nan=ABSENT_SENSOR, unit="°C"))
     suction_gas_temperature = input_register(gauge(130, 0.01, nan=ABSENT_SENSOR, unit="°C"))
 

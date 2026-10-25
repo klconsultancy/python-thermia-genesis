@@ -13,7 +13,7 @@ from modbus_connection.model.fields import CoilField, DiscreteInputField, Number
 
 from thermia_genesis import v17_1
 from thermia_genesis.subsystem import Subsystem
-from thermia_genesis.v17_1 import ABSENT_SENSOR
+from thermia_genesis.v17_1 import ABSENT_SENSOR, ABSENT_SENSOR_AT_SCALE_10
 
 PROTOCOL = Path(__file__).parents[1] / "docs/protocol/17.1"
 
@@ -219,9 +219,11 @@ def test_mapped_register_matches_address_list(name: str) -> None:
         else:
             # A half of a 32-bit value read on its own wraps at 65535.
             assert not documented.description.endswith(("(MSB)", "(LSB)")), documented.description
-        if (documented.unit, documented.scale) == ("°C", 100):
+        # 200.0 °C means "no sensor": 20000 at scale 100, 2000 at scale 10.
+        absent = {100: ABSENT_SENSOR, 10: ABSENT_SENSOR_AT_SCALE_10}.get(documented.scale)
+        if documented.unit == "°C" and absent is not None:
             assert register.nan is not None, documented.description
-            assert ABSENT_SENSOR in register.nan, documented.description
+            assert absent in register.nan, documented.description
 
 
 def test_every_documented_register_belongs_to_a_subsystem() -> None:
