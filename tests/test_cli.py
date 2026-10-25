@@ -154,12 +154,15 @@ def test_main_passes_the_maximum_block_size(
     assert json.loads(capsys.readouterr().out)["firmware"] == "17.1.11"
 
 
-def test_main_refuses_a_block_size_out_of_range(capsys: pytest.CaptureFixture[str]) -> None:
+@pytest.mark.parametrize("size", ["1", "abc"])
+def test_main_refuses_a_block_size_out_of_range(
+    capsys: pytest.CaptureFixture[str], size: str
+) -> None:
     with pytest.raises(SystemExit) as exit_info:
-        cli.main(["dump", "192.0.2.10", "--max-block-size", "1"])
+        cli.main(["dump", "192.0.2.10", "--max-block-size", size])
 
     assert exit_info.value.code == 2
-    assert "--max-block-size" in capsys.readouterr().err
+    assert "--max-block-size: must be 2-125" in capsys.readouterr().err
 
 
 def test_main_reports_a_modbus_error(

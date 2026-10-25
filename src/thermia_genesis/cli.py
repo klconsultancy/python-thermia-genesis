@@ -95,9 +95,12 @@ async def _dump_from_args(args: argparse.Namespace) -> dict[str, Any]:
 
 def _block_size(text: str) -> int:
     """Parse ``--max-block-size``: an integer the library accepts."""
-    size = int(text)
+    msg = f"must be {MIN_BLOCK_SIZE}-{MAX_BLOCK_SIZE}"
+    try:
+        size = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(msg) from None
     if not MIN_BLOCK_SIZE <= size <= MAX_BLOCK_SIZE:
-        msg = f"must be {MIN_BLOCK_SIZE}-{MAX_BLOCK_SIZE}"
         raise argparse.ArgumentTypeError(msg)
     return size
 
