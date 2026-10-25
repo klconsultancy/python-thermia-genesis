@@ -42,6 +42,20 @@ async def test_reads_absent_room_sensor_as_none(mock_modbus_unit: MockModbusUnit
     assert pump.heat_pump.room_temperature is None
 
 
+async def test_reads_the_cooling_mix_valve_opening_in_percent(
+    mock_modbus_unit: MockModbusUnit,
+) -> None:
+    # A Calibra Cool reads 0 to 10000 from a closed to a fully open valve (see errata.md).
+    mock_modbus_unit.coil[33] = True  # passive cooling, so cooling is present
+    mock_modbus_unit.input[137] = 10000
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    await pump.async_update()
+
+    assert pump.cooling is not None
+    assert pump.cooling.mix_valve_opening_degree == 100.0
+
+
 async def test_combines_lsb_before_msb_into_scaled_counter(
     mock_modbus_unit: MockModbusUnit,
 ) -> None:

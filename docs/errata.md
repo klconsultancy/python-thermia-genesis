@@ -2,8 +2,9 @@
 
 Contradictions and errors found in the Thermia Modbus protocol document 17.1, behaviour of
 the reference pump that the document doesn't describe, and how the library handles each.
-Chapter 3 (address list) wins unless the real register dump of the reference pump shows
-otherwise.
+Chapter 3 (address list) wins unless a row below records otherwise, with its evidence: a
+register dump or the display of the reference pump, another edition of the document, or a
+field report from another pump.
 
 ## Register entries
 
@@ -13,7 +14,7 @@ otherwise.
 | Holding registers 61–63 "Gear shift delay heating / pool / cooling" | Unit listed as `min`; the reference pump reads 300, 300 and 60. The display shows the heating delay (300) as "Schakelvertraging 0:05:00" (2026-10-25). | Seconds (`unit="s"`), as the display shows; the protocol document 17.0 and the Mega & Mega E edition of 17.1 ("Modbus protocol for Mega & Mega E, Genesis platform, Version 17.1", ACME01UG01202; PDF dated 2025-12-04) list all three in `s`. |
 | Holding register 30 "Cooling mix valve set point (EM)" | Unit listed as `%`, but it is the display setting "Gewenste koelaanvoer min." (desired cooling supply minimum, 18 °C): on 2026-10-25, changing it on the display to 19 °C made holding 30 read 1900 while holding 105 "Start temp for cooling" stayed 1800, and no other holding register changed. | `°C` at scale 100, with `nan=ABSENT_SENSOR`; the protocol document 17.0 and the Mega & Mega E edition of 17.1 ("Modbus protocol for Mega & Mega E, Genesis platform, Version 17.1", ACME01UG01202; PDF dated 2025-12-04) list it in `°C`. |
 | Holding register 125 "Input power limit during Power Limitation" | The description calls itself "defacto 40125", but its de facto address is 40126; 40125 is register 124, whose own description refers to 40126 for the power limit. | Address 125 (the Address column). |
-| Input register 137 "Mix valve cooling opening degree (EM2/3)" | Chapter 7 lists the unit as `on/off` for an opening degree; chapter 3 lists `%`. | `%` (chapter 3). |
+| Input register 137 "Mix valve cooling opening degree (EM2/3)" | Chapter 7 lists the unit as `on/off` for an opening degree; chapter 3 lists `%` at scale 1. A Calibra Cool reads 0 to 10000 from a closed to a fully open valve (CJNE/thermiagenesis#284), so the scale is 100. The reference pump reads 0 outside the cooling season. | `%` at scale 100. To be verified on the reference pump while passive cooling runs. |
 | Coil 14 "Enable hot gas pump" and the HGW registers: coil 6 "Enable HGW", discrete 52 "HGW sensor alarm", discrete 223 "HGW regulation control signal", input 45 "HGW supply line temperature" | Listed only in chapter 6 (coil 14 in 6.1, the others in 6.2), not in chapter 3. The reference pump has no HGW: the coils and discrete inputs read `False`, input 45 reads 20000. | Mapped from chapter 6. |
 | Input register 47 | Chapter 6 lists it twice: as "Tap water valve position (%)" (as in chapter 3) and as "HGW mix valve position (%)". The reference pump reads 0. | "Tap water valve position" (chapter 3). |
 | Input registers 119–120 "Pool supply/return line temperature (EM)" | Listed in chapter 8 only, not in chapter 3 (holding 119–120 are different registers). The reference pump has no pool: both read 20000. | Mapped from chapter 8. |

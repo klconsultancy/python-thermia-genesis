@@ -119,6 +119,10 @@ UNIT_ERRATA = {
 }
 DOCUMENTED |= {key: DOCUMENTED[key]._replace(unit=unit) for key, unit in UNIT_ERRATA.items()}
 
+# Scales the errata take from another source than chapter 3.
+SCALE_ERRATA = {("input", 137): 100}  # a Calibra Cool reads 0-10000 for 0-100 %
+DOCUMENTED |= {key: DOCUMENTED[key]._replace(scale=scale) for key, scale in SCALE_ERRATA.items()}
+
 
 def documented_subsystems() -> dict[Key, str]:
     subsystems: dict[Key, str] = {}

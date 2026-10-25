@@ -30,7 +30,8 @@ class Cooling(Subsystem):
     active_cooling_directional_valve_position = discrete_input(242)
 
     circuit_supply_line_temperature = input_register(gauge(106, 0.01, nan=ABSENT_SENSOR, unit="°C"))
-    mix_valve_opening_degree = input_register(integer(137, signed=False, unit="%"))
+    # Scale 100, not 1 as chapter 3 says: a Calibra Cool reads 0-10000; see errata.md.
+    mix_valve_opening_degree = input_register(gauge(137, 0.01, unit="%"))
     desired_gear = input_register(integer(141, signed=False))
 
     start_temperature = holding_register(gauge(105, 0.01, nan=ABSENT_SENSOR, unit="°C"))
