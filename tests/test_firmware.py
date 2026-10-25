@@ -1,6 +1,6 @@
 from typing import assert_type
 
-from modbus_connection.exceptions import IllegalDataAddressError
+from modbus_connection.exceptions import ServerDeviceFailureError
 from modbus_connection.mock import MockModbusUnit
 
 from thermia_genesis import FirmwareVersion, ThermiaGenesis
@@ -46,7 +46,7 @@ async def test_reports_another_firmware_as_unsupported(mock_modbus_unit: MockMod
 async def test_has_no_firmware_version_when_the_first_read_fails(
     mock_modbus_unit: MockModbusUnit,
 ) -> None:
-    mock_modbus_unit.fail_read(311, IllegalDataAddressError(), register_type="input")
+    mock_modbus_unit.fail_read(311, ServerDeviceFailureError(), register_type="input")
     pump = ThermiaGenesis(mock_modbus_unit)
 
     await pump.async_update()
@@ -61,7 +61,7 @@ async def test_keeps_the_last_firmware_version_after_a_failed_read(
     mock_modbus_unit.input[311] = [17, 1, 11]
     pump = ThermiaGenesis(mock_modbus_unit)
     await pump.async_update()
-    mock_modbus_unit.fail_read(311, IllegalDataAddressError(), register_type="input")
+    mock_modbus_unit.fail_read(311, ServerDeviceFailureError(), register_type="input")
 
     report = await pump.async_update()
 

@@ -3,6 +3,12 @@
 import logging
 
 from modbus_connection import ModbusUnit
+from modbus_connection.exceptions import (
+    IllegalDataAddressError,
+    IllegalFunctionError,
+    ModbusConnectionError,
+    ModbusError,
+)
 from modbus_connection.model import (
     Component,
     ComponentGroup,
@@ -35,6 +41,16 @@ GROUPS: dict[Space, str] = {
 
 
 _LOGGER = logging.getLogger(__name__)
+
+
+# A read the pump refuses because it lacks the register, as opposed to a failure.
+REFUSALS = (IllegalDataAddressError, IllegalFunctionError)
+GROUP_LABELS = {
+    "coils": "coil",
+    "discrete_inputs": "discrete input",
+    "input_registers": "input register",
+    "holding_registers": "holding register",
+}
 
 
 class EnableCoil(Component):
@@ -135,20 +151,20 @@ class ThermiaGenesis(Device):
                 if await read_enable_coil(unit, address):
                     setattr(self, name, subsystem_type(unit))
                     break
-        subsystems: list[Subsystem | None] = [
-            self.heat_pump,
-            self.heat,
-            self.mix_valve_1,
-            self.tap_water,
-            self.hgw,
-            self.cooling,
-            self.pool,
-            self.electric_meter,
-            self.status,
+        present: list[tuple[str, Subsystem]] = [
+            (name, subsystem)
+            for name in SUBSYSTEMS
+            if (subsystem := getattr(self, name)) is not None
         ]
-        present = [subsystem for subsystem in subsystems if subsystem is not None]
+        # Per group, each component with the subsystem it belongs to, to name refused fields.
+        self._members: dict[str, list[tuple[str, Component]]] = {}
         for space, name in GROUPS.items():
-            components = [s.components[space] for s in present if space in s.components]
+            self._members[name] = [
+                (subsystem_name, subsystem.components[space])
+                for subsystem_name, subsystem in present
+                if space in subsystem.components
+            ]
+            components = [component for _, component in self._members[name]]
             for component in components:
                 # Read only mapped addresses: another pump or firmware may refuse one the
                 # document doesn't list, which would fail the whole read.
@@ -179,4 +195,50 @@ class ThermiaGenesis(Device):
         link is down and ``ModbusTimeoutError`` when nothing answers, like
         ``Device.async_poll``.
         """
-        return await self.async_poll(GROUPS.values())
+        report = await self.async_poll(GROUPS.values())
+        refused = [name for name, err in report.failed.items() if isinstance(err, REFUSALS)]
+        retry = []
+        for name in refused:
+            error = await self._leave_out_refused_fields(name)
+            if error is None:
+                del report.failed[name]
+                retry.append(name)
+            else:
+                report.failed[name] = error
+        if retry:
+            await self.async_poll(retry, report)
+        return report
+
+    async def _leave_out_refused_fields(self, group: str) -> ModbusError | None:
+        """Read each field of ``group`` on its own and leave out those the pump refuses.
+
+        Returns the error that stopped the search, or ``None``. A lost connection propagates.
+        """
+        kept: dict[Component, list[str]] = {}
+        refused: list[str] = []
+        for subsystem_name, component in self._members[group]:
+            kept[component] = []
+            for name, field in component.declared_fields.items():
+                probe = type(component)(self.modbus_unit)
+                probe.restrict_fields([name])
+                try:
+                    answered = await read_optional(probe)
+                except ModbusConnectionError:
+                    raise
+                except ModbusError as err:
+                    return err  # nothing is left out on a partial search
+                if answered is None:
+                    refused.append(
+                        f"{GROUP_LABELS[group]} {field.address} ({subsystem_name}.{name})"
+                    )
+                else:
+                    kept[component].append(name)
+        if not any(kept.values()):
+            _LOGGER.warning("The pump refuses every %s; reading them as None", GROUP_LABELS[group])
+        else:
+            for description in refused:
+                _LOGGER.warning("The pump refuses %s; reading it as None", description)
+        for component, names in kept.items():
+            if len(names) < len(component.declared_fields):
+                component.restrict_fields(names)
+        return None
