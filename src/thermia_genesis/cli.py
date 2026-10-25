@@ -19,6 +19,8 @@ from modbus_connection.exceptions import ModbusConnectionError, ModbusError, Mod
 from thermia_genesis._pump import (
     ENABLE_COILS,
     GROUPS,
+    MAX_BLOCK_SIZE,
+    MIN_BLOCK_SIZE,
     OPTIONAL_PARTS,
     SUBSYSTEMS,
     ThermiaGenesis,
@@ -35,13 +37,13 @@ def _json_value(value: object) -> object:
     return value
 
 
-async def dump(unit: ModbusUnit) -> dict[str, Any]:
+async def dump(unit: ModbusUnit, *, max_block_size: int = MAX_BLOCK_SIZE) -> dict[str, Any]:
     """Read every register the pump has and return it raw and decoded.
 
     A register space whose read fails is left out and listed under ``failed``, keyed like
     ``registers``. A lost connection or a timeout propagates.
     """
-    pump = ThermiaGenesis(unit)
+    pump = ThermiaGenesis(unit, max_block_size=max_block_size)
     await pump.async_ensure_setup()
     raw: dict[str, dict[int, int | bool]] = {}
     failed: dict[str, str] = {}
@@ -86,9 +88,18 @@ async def dump(unit: ModbusUnit) -> dict[str, Any]:
 async def _dump_from_args(args: argparse.Namespace) -> dict[str, Any]:
     connection = await connect_from_args(args)
     try:
-        return await dump(connection.for_unit(args.unit))
+        return await dump(connection.for_unit(args.unit), max_block_size=args.max_block_size)
     finally:
         await connection.close()
+
+
+def _block_size(text: str) -> int:
+    """Parse ``--max-block-size``: an integer the library accepts."""
+    size = int(text)
+    if not MIN_BLOCK_SIZE <= size <= MAX_BLOCK_SIZE:
+        msg = f"must be {MIN_BLOCK_SIZE}-{MAX_BLOCK_SIZE}"
+        raise argparse.ArgumentTypeError(msg)
+    return size
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -103,6 +114,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     add_connection_args(dump_parser)
     dump_parser.add_argument(
         "--unit", type=int, default=1, help="Modbus unit id (default: 1; ignored on TCP)"
+    )
+    dump_parser.add_argument(
+        "--max-block-size",
+        type=_block_size,
+        default=MAX_BLOCK_SIZE,
+        help=f"most addresses per read, {MIN_BLOCK_SIZE}-{MAX_BLOCK_SIZE} "
+        f"(default: {MAX_BLOCK_SIZE}); lower it for a pump that fails on long reads",
     )
     dump_parser.add_argument(
         "-o", "--output", type=Path, default=None, help="write to this file instead of stdout"

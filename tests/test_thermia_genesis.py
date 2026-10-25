@@ -143,8 +143,9 @@ async def test_reads_in_blocks_of_at_most_the_maximum_size(
     assert read_addresses(mock_modbus_unit) == mapped_addresses(present(pump))
 
 
-@pytest.mark.parametrize("size", [0, 126])
-def test_refuses_a_block_size_modbus_does_not_allow(
+# 1 is too small too: the 32-bit counters span two registers.
+@pytest.mark.parametrize("size", [0, 1, 126])
+def test_refuses_a_block_size_the_map_or_modbus_does_not_allow(
     mock_modbus_unit: MockModbusUnit, size: int
 ) -> None:
     with pytest.raises(ValueError, match="max_block_size"):

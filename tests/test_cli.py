@@ -142,6 +142,26 @@ def test_main_writes_the_dump_but_fails_when_a_space_fails(
     assert list(json.loads(output.read_text())["failed"]) == ["input"]
 
 
+@pytest.mark.usefixtures("connection")
+def test_main_passes_the_maximum_block_size(
+    mock_modbus_unit: MockModbusUnit, capsys: pytest.CaptureFixture[str]
+) -> None:
+    reference_pump(mock_modbus_unit)
+
+    assert cli.main(["dump", "192.0.2.10", "--max-block-size", "16"]) == 0
+
+    assert max(event.count for event in mock_modbus_unit.read_events) <= 16
+    assert json.loads(capsys.readouterr().out)["firmware"] == "17.1.11"
+
+
+def test_main_refuses_a_block_size_out_of_range(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main(["dump", "192.0.2.10", "--max-block-size", "1"])
+
+    assert exit_info.value.code == 2
+    assert "--max-block-size" in capsys.readouterr().err
+
+
 def test_main_reports_a_modbus_error(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

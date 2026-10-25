@@ -78,6 +78,21 @@ PARTS: dict[str, tuple[type[Subsystem], tuple[int, ...]]] = {
     "electric_meter": (ElectricMeter, (26,)),
 }
 OPTIONAL_PARTS = tuple(PARTS)
+
+_SUBSYSTEM_TYPES: tuple[type[Subsystem], ...] = (
+    HeatPumpUnit,
+    Heat,
+    TapWater,
+    Status,
+    *(subsystem_type for subsystem_type, _ in PARTS.values()),
+)
+# The shortest read the map allows: its widest field (a 32-bit counter spans two registers).
+MIN_BLOCK_SIZE = max(
+    getattr(field, "count", 1)
+    for subsystem_type in _SUBSYSTEM_TYPES
+    for component in subsystem_type.component_types.values()
+    for field in component.declared_fields.values()
+)
 ENABLE_COILS = tuple(sorted(address for _, addresses in PARTS.values() for address in addresses))
 
 
@@ -92,12 +107,12 @@ class ThermiaGenesis(Device):
     def __init__(self, unit: ModbusUnit, *, max_block_size: int = MAX_BLOCK_SIZE) -> None:
         """Map the pump on ``unit``; nothing is read until ``async_update()``.
 
-        ``max_block_size`` caps the number of addresses one read asks for (1-125). Lower it
+        ``max_block_size`` caps the number of addresses one read asks for (2-125). Lower it
         for a pump whose Modbus interface fails on long reads. Raises ``ValueError`` for a
-        size Modbus doesn't allow.
+        size below the widest field of the map or above what Modbus allows.
         """
-        if not 1 <= max_block_size <= MAX_BLOCK_SIZE:
-            msg = f"max_block_size must be 1-{MAX_BLOCK_SIZE}, got {max_block_size}"
+        if not MIN_BLOCK_SIZE <= max_block_size <= MAX_BLOCK_SIZE:
+            msg = f"max_block_size must be {MIN_BLOCK_SIZE}-{MAX_BLOCK_SIZE}, got {max_block_size}"
             raise ValueError(msg)
         super().__init__(unit)
         self._max_block_size = max_block_size
