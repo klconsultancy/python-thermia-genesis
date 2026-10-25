@@ -7,10 +7,12 @@ from typing import assert_type
 import pytest
 from modbus_connection.exceptions import (
     IllegalDataAddressError,
+    IllegalFunctionError,
     ModbusConnectionError,
     ModbusTimeoutError,
+    ServerDeviceFailureError,
 )
-from modbus_connection.mock import MockModbusUnit
+from modbus_connection.mock import MockModbusConnection, MockModbusUnit, ReadEvent
 from modbus_connection.model import gauge
 from modbus_connection.model.fields import CoilField, DiscreteInputField
 
@@ -217,7 +219,8 @@ async def test_detects_the_parts_once(mock_modbus_unit: MockModbusUnit) -> None:
 async def test_a_failed_read_stops_only_its_register_space(
     mock_modbus_unit: MockModbusUnit,
 ) -> None:
-    mock_modbus_unit.fail_read(48, IllegalDataAddressError(), register_type="input")
+    # An error other than a refusal: the space fails, the others are read.
+    mock_modbus_unit.fail_read(48, ServerDeviceFailureError(), register_type="input")
     mock_modbus_unit.holding[0] = 3
     mock_modbus_unit.coil[9] = True
     pump = ThermiaGenesis(mock_modbus_unit)
@@ -228,6 +231,47 @@ async def test_a_failed_read_stops_only_its_register_space(
     assert report.updated == {"coils", "discrete_inputs", "holding_registers"}
     assert pump.status.operational_mode is OperationalMode.ON_AUTO
     assert pump.heat_pump.enable_heat is True
+
+
+@pytest.mark.parametrize("refusal", [IllegalDataAddressError, IllegalFunctionError])
+async def test_leaves_out_a_register_the_pump_refuses(
+    mock_modbus_unit: MockModbusUnit,
+    caplog: pytest.LogCaptureFixture,
+    refusal: type[IllegalDataAddressError | IllegalFunctionError],
+) -> None:
+    # One refused register made ~400 entities unavailable in CJNE/pythermiagenesis#8.
+    mock_modbus_unit.fail_read(13, refusal(), register_type="input")
+    mock_modbus_unit.input[10] = 2358
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    report = await pump.async_update()
+
+    assert report.complete
+    assert pump.heat_pump.outdoor_temperature is None
+    assert pump.heat_pump.brine_in_temperature == 23.58
+    assert "input register 13 (heat_pump.outdoor_temperature)" in caplog.text
+
+
+async def test_looks_for_refused_registers_once(mock_modbus_unit: MockModbusUnit) -> None:
+    # A pump that refuses nothing reads one update in `baseline` reads.
+    clean = MockModbusConnection().for_unit(1)
+    await ThermiaGenesis(clean).async_update()
+    baseline = len(clean.read_events)
+    mock_modbus_unit.fail_read(13, IllegalDataAddressError(), register_type="input")
+    pump = ThermiaGenesis(mock_modbus_unit)
+    await pump.async_update()
+    first = len(mock_modbus_unit.read_events)
+
+    report = await pump.async_update()
+
+    assert report.complete
+    # No probing field by field; leaving out input 13 may split one block in two.
+    assert len(mock_modbus_unit.read_events) - first <= baseline + 1
+    assert ("input", 13) not in read_addresses_of(mock_modbus_unit.read_events[first:])
+
+
+def read_addresses_of(events: list[ReadEvent]) -> set[tuple[str, int]]:
+    return {(e.register_type, e.address + offset) for e in events for offset in range(e.count)}
 
 
 async def test_raises_when_the_link_is_down(mock_modbus_unit: MockModbusUnit) -> None:
