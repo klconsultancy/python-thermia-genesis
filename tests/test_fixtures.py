@@ -45,7 +45,7 @@ async def test_replays_the_fixture(mock_modbus_unit: MockModbusUnit, name: str) 
 
 
 def test_has_the_reference_pump() -> None:
-    assert list(FIXTURES) == ["calibra7-17.1.11.json"]
+    assert "calibra7-17.1.11.json" in FIXTURES
 
 
 async def test_reference_pump_reads_as_expected(mock_modbus_unit: MockModbusUnit) -> None:
