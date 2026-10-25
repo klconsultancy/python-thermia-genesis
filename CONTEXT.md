@@ -30,7 +30,7 @@ value (`None`).
 **Subsystem**
 : A functional part of the installation, matching chapters 4–9 of the protocol document:
 heat pump unit, heat, tap water, cooling, pool and electric meter, plus status (the
-operational mode and the demands). In the library a `Subsystem` holds the fields of one.
+operational mode and the demands) and the energy statistics. In the library a `Subsystem` holds the fields of one.
 
 **EM (extension module)**
 : Optional hardware (EM, EM2, EM3) that adds circuits such as passive cooling. Registers
@@ -47,3 +47,9 @@ marked "(EM)" only exist with an extension module.
 
 **Primary / secondary unit**
 : In cascaded installations one primary controller drives secondary heat pump units.
+
+**Energy statistics**
+: The energy and COP the display shows per circuit (heating, tap water) for *months 1–12*
+(the current 12 months) and *months 13–24* (the 12 before): auxiliary heater, consumed,
+delivered, COP and natural source (the energy taken from the ground or air). *Combined* on
+the display is the sum of both circuits and has no registers of its own.

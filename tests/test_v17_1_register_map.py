@@ -43,9 +43,6 @@ ASSIGNED = {
     ("holding", 125): "heat_pump_unit",
 }
 
-# Every subsystem, as a module of v17_1.
-SUBSYSTEM_NAMES = sorted({*CHAPTERS.values(), *ASSIGNED.values()})
-
 
 class DocumentedRegister(NamedTuple):
     unit: str
@@ -124,15 +121,46 @@ SCALE_ERRATA = {("input", 137): 100}  # a Calibra Cool reads 0-10000 for 0-100 %
 DOCUMENTED |= {key: DOCUMENTED[key]._replace(scale=scale) for key, scale in SCALE_ERRATA.items()}
 
 
+# Registers that no edition of the protocol lists, decoded against the display of the
+# reference pump (see errata.md): the energy statistics over months 1-12 (from input 348)
+# and months 13-24 (from 380). Each energy is a pair, the kWh below 1000 and the whole MWh.
+STATISTICS = {"months 1-12": 348, "months 13-24": 380}
+STATISTICS_BLOCK = {
+    0: ("kWh", "aux heater"),
+    2: ("kWh", "consumed"),
+    4: ("kWh", "delivered"),
+    6: ("", "COP"),
+    7: ("kWh", "natural source"),
+}
+CIRCUITS = {"heating": 0, "tap water": 9}
+DISPLAY_ONLY: dict[Key, DocumentedRegister] = {}
+for period, start in STATISTICS.items():
+    for circuit, circuit_offset in CIRCUITS.items():
+        for offset, (unit, quantity) in STATISTICS_BLOCK.items():
+            address = start + circuit_offset + offset
+            description = f"{circuit.capitalize()} {quantity}, {period}"
+            if unit:
+                DISPLAY_ONLY["input", address] = DocumentedRegister(unit, 1, description)
+                DISPLAY_ONLY["input", address + 1] = DocumentedRegister(
+                    "MWh", 1, f"{description} (MWh)"
+                )
+            else:
+                DISPLAY_ONLY["input", address] = DocumentedRegister("", 10, description)
+DOCUMENTED |= DISPLAY_ONLY
+
+
 def documented_subsystems() -> dict[Key, str]:
     subsystems: dict[Key, str] = {}
     for chapter, name in CHAPTERS.items():
         subsystems.update(dict.fromkeys(read_table(PROTOCOL / chapter), name))
     subsystems.update(ASSIGNED)
+    subsystems.update(dict.fromkeys(DISPLAY_ONLY, "energy_statistics"))
     return subsystems
 
 
 SUBSYSTEMS = documented_subsystems()
+# Every subsystem, as a module of v17_1.
+SUBSYSTEM_NAMES = sorted(set(SUBSYSTEMS.values()))
 
 
 class MappedRegister(NamedTuple):

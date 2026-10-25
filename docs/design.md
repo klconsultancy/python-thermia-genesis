@@ -44,7 +44,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   `integer`, `coil`, `discrete_input`, `enum`, ...). No CSV or code generator:
   the map is small enough that readable, reviewable code wins.
 - The `v17_1` package has one module per subsystem (`heat_pump_unit`, `heat`, `tap_water`,
-  `cooling`, `pool`, `electric_meter`, `status`), each with one `Subsystem` class
+  `cooling`, `pool`, `electric_meter`, `status`, `energy_statistics`), each with one
+  `Subsystem` class
   (`HeatPumpUnit`, `Heat`, ...). It declares every field once, wrapped in its register space:
   `coil(11)`, `discrete_input(220)`, `input_register(gauge(12, ...))`,
   `holding_register(gauge(5, ...))`. Enums from the footnotes live in `v17_1.enums`.
@@ -66,6 +67,12 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   registers comes with the write API (#19, see Scope).
 - Chapters 4–9 list a few registers that chapter 3 doesn't (HGW, pool temperatures). They
   are mapped from their chapter and recorded in the errata.
+- The energy statistics (input 348–365 and 380–397) are in no edition of the protocol
+  document. They are mapped because every value matched the display of the reference pump
+  (#33), and the errata record the comparison. They form their own subsystem,
+  `energy_statistics`, which every pump has. A pump that refuses them reads them as `None`
+  (see Public API). The day block next to them (input 330–339) is not mapped: its kWh didn't
+  match the display's day values.
 - A register belongs to the subsystem of the chapter (4–9) that lists it. Chapters 4–9 leave
   some registers out or group them oddly, so these are assigned explicitly:
   - cooling: holding 105 and 106 (start/stop temperature), discrete 47, 238 and 242;
@@ -78,7 +85,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   its subsystem, and that each half of a 32-bit value sits on the register the document
   labels MSB or LSB. It also checks the reverse: every documented register belongs to a
   subsystem and is in the map, so the map covers the whole of chapter 3 plus the registers
-  only chapters 4–9 list (266 registers in 262 fields). It also enforces the encoding rules
+  only chapters 4–9 list, and the energy statistics the errata decode from the display (302
+  registers in 282 fields). It also enforces the encoding rules
   below (absent sensor, signedness), and checks every row of chapters 4–9 against chapter 3;
   the rows that differ are listed with their errata entry.
 - Contradictions in the documentation, behaviour of the reference pump the documentation
@@ -97,6 +105,9 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
     the electric meter's phase power (export at the house connection) and unscaled
     temperatures. The consistency test lists them, each with its reason;
   - enums, bit fields and 32-bit counters are unsigned.
+- An energy of the energy statistics is a pair of registers: the kWh below 1000, then the
+  whole MWh (87 and 1 make 1087 kWh). `KwhMwhField` in `v17_1.energy_statistics` decodes it
+  as `MWh × 1000 + kWh`, in kWh.
 - Scales are 1, 10 or 100 (the transmitted value is that many times larger). The map
   declares the inverse multiplier `modbus_connection` expects (`gauge(69, 0.01)` for 100).
 - 32-bit counters are split in an MSB and an LSB register and combined as
@@ -125,7 +136,7 @@ pump.status.operational_mode
 ```
 
 - `ThermiaGenesis` is a `modbus_connection` `Device`. Its subsystems are `heat_pump`,
-  `heat`, `tap_water` and `status`, and the optional `mix_valve_1`, `hgw`, `cooling`, `pool`
+  `heat`, `tap_water`, `status` and `energy_statistics`, and the optional `mix_valve_1`, `hgw`, `cooling`, `pool`
   and `electric_meter` (see below). A caller asks the
   subsystem for a value and never sees the register space it comes from. Every field is
   typed (`pump.heat.system_supply_line_temperature` is `float | None` for mypy); a test
@@ -133,7 +144,7 @@ pump.status.operational_mode
 - `async_update()` reads with one `ComponentGroup` per register space, so adjacent registers
   share a read, also across subsystems. A read never bridges a gap (`max_gap = 0`): it
   touches only mapped addresses. The reference pump answers any address, but another model
-  or firmware may refuse one the document doesn't list. The whole map takes 68 block reads,
+  or firmware may refuse one the document doesn't list. The whole map takes 70 block reads,
   about 0.4 s on the reference pump (bridging the gaps would take 9 reads and 0.1 s).
 - `ThermiaGenesis(unit, max_block_size=...)` caps the addresses one read asks for (2–125,
   default 125; 2 is the widest field of the map, a 32-bit counter). An older Diplomat Inverter's Modbus interface failed on reads of 16
