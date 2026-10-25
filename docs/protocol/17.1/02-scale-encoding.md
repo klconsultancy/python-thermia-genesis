@@ -29,11 +29,12 @@ Negative numbers are represented by the upper half of each 16 bit register.
 2 = 2
 1 = 1
 0 = 0
-= 65535
-= 65534
-= 65533
+-1 = 65535
+-2 = 65534
+-3 = 65533
 ...
--100 = 65436 etc.
+-100 = 65436
+etc.
 ```
 
 Example: if "Brine out low alarm limit" register is set to -5 °C then, since the register has a scale of 100, the value read on Modbus should be 65036, representing -500.
