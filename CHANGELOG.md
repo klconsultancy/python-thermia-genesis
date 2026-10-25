@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.2.0...v0.2.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* accept every modbus-connection from 4.12.3 on ([#47](https://github.com/klconsultancy/python-thermia-genesis/issues/47)) ([c17df21](https://github.com/klconsultancy/python-thermia-genesis/commit/c17df21aa27d9dac1f23c052f6f110bd77ab365c))
+
 ## [0.2.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.1.0...v0.2.0) (2026-10-25)
 
 
