@@ -2,8 +2,9 @@
 
 Contradictions and errors found in the Thermia Modbus protocol document 17.1, behaviour of
 the reference pump that the document doesn't describe, and how the library handles each.
-Chapter 3 (address list) wins unless the real register dump of the reference pump shows
-otherwise.
+Chapter 3 (address list) wins unless a row below records otherwise, with its evidence: a
+register dump or the display of the reference pump, another edition of the document, or a
+field report from another pump.
 
 ## Register entries
 
