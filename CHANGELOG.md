@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.1.0...v0.2.0) (2026-10-25)
+
+
+### Features
+
+* cap the length of a read with max_block_size ([#44](https://github.com/klconsultancy/python-thermia-genesis/issues/44)) ([5c4a435](https://github.com/klconsultancy/python-thermia-genesis/commit/5c4a4359d4b810e1337931f61c040135f9cfd738))
+* leave out the registers a pump refuses ([#46](https://github.com/klconsultancy/python-thermia-genesis/issues/46)) ([f8fc233](https://github.com/klconsultancy/python-thermia-genesis/commit/f8fc233efff3f1aa12a84bf9d1e11ea9c62e858d))
+
 ## 0.1.0 (2026-10-25)
 
 
