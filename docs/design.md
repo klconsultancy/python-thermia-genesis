@@ -128,6 +128,10 @@ pump.status.operational_mode
   touches only mapped addresses. The reference pump answers any address, but another model
   or firmware may refuse one the document doesn't list. The whole map takes 68 block reads,
   about 0.4 s on the reference pump (bridging the gaps would take 9 reads and 0.1 s).
+- `ThermiaGenesis(unit, max_block_size=...)` caps the addresses one read asks for (1–125,
+  default 125). An older Diplomat Inverter's Modbus interface failed on reads of 16
+  registers (CJNE/thermiagenesis#236), so such a pump needs a lower value. A pause between
+  requests belongs to the connection (`message_spacing` in `modbus_connection`).
 - `async_update()` returns the `UpdateReport` of `Device.async_poll`, with one entry per
   register space (`coils`, `discrete_inputs`, `input_registers`, `holding_registers`): a
   failed read stops only its own space. Like `async_poll`, it raises `ModbusConnectionError`

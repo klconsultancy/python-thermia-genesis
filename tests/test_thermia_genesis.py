@@ -130,6 +130,27 @@ async def test_reads_only_the_mapped_addresses(mock_modbus_unit: MockModbusUnit)
     assert read_addresses(mock_modbus_unit) == mapped_addresses(present(pump))
 
 
+async def test_reads_in_blocks_of_at_most_the_maximum_size(
+    mock_modbus_unit: MockModbusUnit,
+) -> None:
+    # An older Diplomat Inverter crashed on reads of 16 registers (CJNE/thermiagenesis#236).
+    enable_every_part(mock_modbus_unit)
+    pump = ThermiaGenesis(mock_modbus_unit, max_block_size=16)
+
+    await pump.async_update()
+
+    assert max(event.count for event in mock_modbus_unit.read_events) <= 16
+    assert read_addresses(mock_modbus_unit) == mapped_addresses(present(pump))
+
+
+@pytest.mark.parametrize("size", [0, 126])
+def test_refuses_a_block_size_modbus_does_not_allow(
+    mock_modbus_unit: MockModbusUnit, size: int
+) -> None:
+    with pytest.raises(ValueError, match="max_block_size"):
+        ThermiaGenesis(mock_modbus_unit, max_block_size=size)
+
+
 async def test_leaves_out_the_parts_that_are_not_enabled(
     mock_modbus_unit: MockModbusUnit,
 ) -> None:
