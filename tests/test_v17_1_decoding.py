@@ -196,3 +196,14 @@ async def test_combines_kwh_and_mwh_into_one_energy(mock_modbus_unit: MockModbus
     await pump.async_update()
 
     assert pump.energy_statistics.heating_consumed_months_1_to_12 == 1087
+
+
+async def test_reads_a_cop_of_zero_as_none(mock_modbus_unit: MockModbusUnit) -> None:
+    # A COP of 0 doesn't exist, while a pump without the energy statistics reads 0 for
+    # every address it doesn't know (see errata.md).
+    mock_modbus_unit.input[354] = 0
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    await pump.async_update()
+
+    assert pump.energy_statistics.heating_cop_months_1_to_12 is None

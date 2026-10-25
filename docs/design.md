@@ -69,8 +69,12 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
 - The energy statistics (input 348–365 and 380–397) are in no edition of the protocol
   document. They are mapped because every value matched the display of the reference pump
   (#33), and the errata record the comparison. They form their own subsystem,
-  `energy_statistics`, which every pump has. A pump that refuses them reads them as `None`
-  (see Public API). The day block next to them (input 330–339) is not mapped: its kWh didn't
+  `energy_statistics`, which is always read: no Enable coil tells whether a pump has them.
+  A pump that refuses them reads them as `None` (see Public API), but a pump that answers
+  every address, like the reference pump, reads 0 where it lacks them. So a COP of 0, which
+  no real COP is, decodes as `None`; an energy of 0 can be real (the reference pump's heating
+  aux heater) and stays 0. The Home Assistant integration disables these entities by
+  default, since they are verified on a Calibra 17.1.11 only. The day block next to them (input 330–339) is not mapped: its kWh didn't
   match the display's day values.
 - A register belongs to the subsystem of the chapter (4–9) that lists it. Chapters 4–9 leave
   some registers out or group them oddly, so these are assigned explicitly:
