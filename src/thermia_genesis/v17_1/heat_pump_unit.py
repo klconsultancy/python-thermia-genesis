@@ -155,7 +155,7 @@ class HeatPumpUnit(Subsystem):
     # Gears
     minimum_allowed_gear_in_heating = holding_register(integer(26, signed=False))
     maximum_allowed_gear_in_heating = holding_register(integer(27, signed=False))
-    gear_shift_delay_heating = holding_register(integer(61, signed=False, unit="min"))
+    gear_shift_delay_heating = holding_register(integer(61, signed=False, unit="s"))
 
     # Brine limits
     brine_in_high_alarm_limit = holding_register(gauge(67, 0.01, nan=ABSENT_SENSOR, unit="°C"))
