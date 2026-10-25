@@ -9,7 +9,7 @@ from thermia_genesis.subsystem import (
     holding_register,
     input_register,
 )
-from thermia_genesis.v17_1 import ABSENT_SENSOR
+from thermia_genesis.v17_1 import ABSENT_SENSOR, ABSENT_SENSOR_AT_SCALE_10
 
 
 class Pool(Subsystem):
@@ -29,7 +29,9 @@ class Pool(Subsystem):
 
     # °C as in chapter 8, not % as in chapter 3: the reference pump reads 26.00; see errata.md.
     charge_set_point = holding_register(gauge(58, 0.01, nan=ABSENT_SENSOR, unit="°C"))
-    return_temperature_to_heat_exchanger_set_point = holding_register(gauge(299, 0.1, unit="°C"))
+    return_temperature_to_heat_exchanger_set_point = holding_register(
+        gauge(299, 0.1, nan=ABSENT_SENSOR_AT_SCALE_10, unit="°C")
+    )
     hysteresis_set_point = holding_register(gauge(300, 0.1, unit="K"))
     gear_shift_delay = holding_register(integer(62, signed=False, unit="s"))
     minimum_allowed_gear = holding_register(integer(85, signed=False))

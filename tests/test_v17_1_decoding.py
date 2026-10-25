@@ -32,6 +32,16 @@ async def test_combines_msb_and_lsb_into_one_counter(mock_modbus_unit: MockModbu
     assert pump.heat_pump.compressor_operating_hours == 133417
 
 
+async def test_reads_absent_room_sensor_as_none(mock_modbus_unit: MockModbusUnit) -> None:
+    # Input 121 is at scale 10, so a pump without a room sensor reads 2000 (200.0 °C).
+    mock_modbus_unit.input[121] = 2000
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    await pump.async_update()
+
+    assert pump.heat_pump.room_temperature is None
+
+
 async def test_combines_lsb_before_msb_into_scaled_counter(
     mock_modbus_unit: MockModbusUnit,
 ) -> None:
