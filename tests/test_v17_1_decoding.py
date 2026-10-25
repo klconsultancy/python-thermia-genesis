@@ -1,3 +1,4 @@
+import pytest
 from modbus_connection.mock import MockModbusUnit
 
 from thermia_genesis import ThermiaGenesis
@@ -185,3 +186,36 @@ async def test_reads_negative_phase_power(mock_modbus_unit: MockModbusUnit) -> N
 
     assert pump.electric_meter is not None
     assert pump.electric_meter.l1_power == -500
+
+
+async def test_combines_kwh_and_mwh_into_one_energy(mock_modbus_unit: MockModbusUnit) -> None:
+    # The display shows 1.1 MWh consumed for heating over months 1-12; the registers read
+    # 87 kWh and 1 MWh, so 1087 kWh (see errata.md).
+    mock_modbus_unit.input[350] = [87, 1]
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    await pump.async_update()
+
+    assert pump.energy_statistics.heating_consumed_months_1_to_12 == 1087
+
+
+@pytest.mark.parametrize(
+    ("address", "name"),
+    [
+        (354, "heating_cop_months_1_to_12"),
+        (363, "tap_water_cop_months_1_to_12"),
+        (386, "heating_cop_months_13_to_24"),
+        (395, "tap_water_cop_months_13_to_24"),
+    ],
+)
+async def test_reads_a_cop_of_zero_as_none(
+    mock_modbus_unit: MockModbusUnit, address: int, name: str
+) -> None:
+    # A COP of 0 doesn't exist, while a pump without the energy statistics reads 0 for
+    # every address it doesn't know (see errata.md).
+    mock_modbus_unit.input[address] = 0
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    await pump.async_update()
+
+    assert getattr(pump.energy_statistics, name) is None

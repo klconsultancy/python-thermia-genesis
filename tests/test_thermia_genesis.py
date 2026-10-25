@@ -25,7 +25,7 @@ from thermia_genesis.v17_1.heat import Heat, MixValve1
 from thermia_genesis.v17_1.pool import Pool
 from thermia_genesis.v17_1.tap_water import Hgw
 
-ALWAYS = ["heat_pump", "heat", "tap_water", "status"]
+ALWAYS = ["heat_pump", "heat", "tap_water", "status", "energy_statistics"]
 # The Enable coil of each optional part (docs/design.md); cooling has two.
 ENABLE_COILS = {
     6: "hgw",
@@ -90,6 +90,7 @@ def test_fields_are_typed(mock_modbus_unit: MockModbusUnit) -> None:
     assert_type(pump.heat_pump.compressor_operating_hours, int | None)
     assert_type(pump.status.operational_mode, OperationalMode | None)
     assert_type(pump.heat.heating_season_active, bool | None)
+    assert_type(pump.energy_statistics.heating_consumed_months_1_to_12, int | None)
     assert_type(pump.cooling, Cooling | None)
     assert_type(pump.pool, Pool | None)
     assert_type(pump.electric_meter, ElectricMeter | None)

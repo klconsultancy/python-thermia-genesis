@@ -22,6 +22,7 @@ from thermia_genesis.firmware import FirmwareVersion
 from thermia_genesis.subsystem import Space, Subsystem
 from thermia_genesis.v17_1.cooling import Cooling
 from thermia_genesis.v17_1.electric_meter import ElectricMeter
+from thermia_genesis.v17_1.energy_statistics import EnergyStatistics
 from thermia_genesis.v17_1.heat import Heat, MixValve1
 from thermia_genesis.v17_1.heat_pump_unit import HeatPumpUnit
 from thermia_genesis.v17_1.pool import Pool
@@ -83,6 +84,7 @@ SUBSYSTEMS = (
     "pool",
     "electric_meter",
     "status",
+    "energy_statistics",
 )
 # Each optional part, its subsystem and its Enable coils: the part is present when one of
 # them is on (docs/design.md). Cooling is active (coil 10) or passive (coil 33).
@@ -100,6 +102,7 @@ _SUBSYSTEM_TYPES: tuple[type[Subsystem], ...] = (
     Heat,
     TapWater,
     Status,
+    EnergyStatistics,
     *(subsystem_type for subsystem_type, _ in PARTS.values()),
 )
 # The shortest read the map allows: its widest field (a 32-bit counter spans two registers).
@@ -136,6 +139,7 @@ class ThermiaGenesis(Device):
         self.heat = Heat(unit)
         self.tap_water = TapWater(unit)
         self.status = Status(unit)
+        self.energy_statistics = EnergyStatistics(unit)
         self.mix_valve_1: MixValve1 | None = None
         self.hgw: Hgw | None = None
         self.cooling: Cooling | None = None
