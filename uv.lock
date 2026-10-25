@@ -1050,8 +1050,8 @@ release = [
 
 [package.metadata]
 requires-dist = [
-    { name = "modbus-connection", specifier = ">=4.12.6,<5" },
-    { name = "modbus-connection", extras = ["tmodbus"], marker = "extra == 'tmodbus'", specifier = ">=4.12.6,<5" },
+    { name = "modbus-connection", specifier = ">=4.12.3" },
+    { name = "modbus-connection", extras = ["tmodbus"], marker = "extra == 'tmodbus'", specifier = ">=4.12.3" },
 ]
 provides-extras = ["tmodbus"]
 
