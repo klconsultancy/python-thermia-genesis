@@ -22,6 +22,9 @@ from thermia_genesis.v17_1.pool import Pool
 from thermia_genesis.v17_1.status import Status
 from thermia_genesis.v17_1.tap_water import Hgw, TapWater
 
+# The longest read Modbus allows for registers (FC03/FC04); modbus_connection caps bits at it too.
+MAX_BLOCK_SIZE = 125
+
 # The ComponentGroup that reads each register space; also the names in the UpdateReport.
 GROUPS: dict[Space, str] = {
     "coil": "coils",
@@ -75,6 +78,21 @@ PARTS: dict[str, tuple[type[Subsystem], tuple[int, ...]]] = {
     "electric_meter": (ElectricMeter, (26,)),
 }
 OPTIONAL_PARTS = tuple(PARTS)
+
+_SUBSYSTEM_TYPES: tuple[type[Subsystem], ...] = (
+    HeatPumpUnit,
+    Heat,
+    TapWater,
+    Status,
+    *(subsystem_type for subsystem_type, _ in PARTS.values()),
+)
+# The shortest read the map allows: its widest field (a 32-bit counter spans two registers).
+MIN_BLOCK_SIZE = max(
+    getattr(field, "count", 1)
+    for subsystem_type in _SUBSYSTEM_TYPES
+    for component in subsystem_type.component_types.values()
+    for field in component.declared_fields.values()
+)
 ENABLE_COILS = tuple(sorted(address for _, addresses in PARTS.values() for address in addresses))
 
 
@@ -86,9 +104,18 @@ class ThermiaGenesis(Device):
     stay ``None`` if the pump doesn't have them.
     """
 
-    def __init__(self, unit: ModbusUnit) -> None:
-        """Map the pump on ``unit``; nothing is read until ``async_update()``."""
+    def __init__(self, unit: ModbusUnit, *, max_block_size: int = MAX_BLOCK_SIZE) -> None:
+        """Map the pump on ``unit``; nothing is read until ``async_update()``.
+
+        ``max_block_size`` caps the number of addresses one read asks for (2-125). Lower it
+        for a pump whose Modbus interface fails on long reads. Raises ``ValueError`` for a
+        size below the widest field of the map or above what Modbus allows.
+        """
+        if not MIN_BLOCK_SIZE <= max_block_size <= MAX_BLOCK_SIZE:
+            msg = f"max_block_size must be {MIN_BLOCK_SIZE}-{MAX_BLOCK_SIZE}, got {max_block_size}"
+            raise ValueError(msg)
         super().__init__(unit)
+        self._max_block_size = max_block_size
         self.heat_pump = HeatPumpUnit(unit)
         self.heat = Heat(unit)
         self.tap_water = TapWater(unit)
@@ -126,6 +153,7 @@ class ThermiaGenesis(Device):
                 # Read only mapped addresses: another pump or firmware may refuse one the
                 # document doesn't list, which would fail the whole read.
                 component.max_gap = 0
+                component.max_span = self._max_block_size
             # One group per register space: adjacent registers of different subsystems share
             # a read, and a failed read stops only its own space.
             setattr(self, name, ComponentGroup(unit, components))
