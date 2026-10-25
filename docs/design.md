@@ -45,9 +45,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   the map is small enough that readable, reviewable code wins.
 - The `v17_1` package has one module per subsystem (`heat_pump_unit`, `heat`, `tap_water`,
   `cooling`, `pool`, `electric_meter`, `status`, `energy_statistics`), each with one
-  `Subsystem` class
-  (`HeatPumpUnit`, `Heat`, ...). It declares every field once, wrapped in its register space:
-  `coil(11)`, `discrete_input(220)`, `input_register(gauge(12, ...))`,
+  `Subsystem` class (`HeatPumpUnit`, `Heat`, ...). It declares every field once, wrapped in
+  its register space: `coil(11)`, `discrete_input(220)`, `input_register(gauge(12, ...))`,
   `holding_register(gauge(5, ...))`. Enums from the footnotes live in `v17_1.enums`.
 - `thermia_genesis.subsystem` builds one `modbus_connection` component per register space
   from those declarations (`HeatCoils`, `HeatDiscreteInputs`, `HeatInputRegisters`,
@@ -85,10 +84,10 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   its subsystem, and that each half of a 32-bit value sits on the register the document
   labels MSB or LSB. It also checks the reverse: every documented register belongs to a
   subsystem and is in the map, so the map covers the whole of chapter 3 plus the registers
-  only chapters 4–9 list, and the energy statistics the errata decode from the display (302
-  registers in 282 fields). It also enforces the encoding rules
-  below (absent sensor, signedness), and checks every row of chapters 4–9 against chapter 3;
-  the rows that differ are listed with their errata entry.
+  only chapters 4–9 list, and the energy statistics the errata decode from the display
+  (302 registers in 282 fields). It also enforces the encoding rules below (absent sensor,
+  signedness), and checks every row of chapters 4–9 against chapter 3; the rows that
+  differ are listed with their errata entry.
 - Contradictions in the documentation, behaviour of the reference pump the documentation
   doesn't describe, and how we handle each, are recorded in [`errata.md`](errata.md). The
   real register dump of the reference pump decides.
@@ -136,9 +135,9 @@ pump.status.operational_mode
 ```
 
 - `ThermiaGenesis` is a `modbus_connection` `Device`. Its subsystems are `heat_pump`,
-  `heat`, `tap_water`, `status` and `energy_statistics`, and the optional `mix_valve_1`, `hgw`, `cooling`, `pool`
-  and `electric_meter` (see below). A caller asks the
-  subsystem for a value and never sees the register space it comes from. Every field is
+  `heat`, `tap_water`, `status` and `energy_statistics`, and the optional `mix_valve_1`,
+  `hgw`, `cooling`, `pool` and `electric_meter` (see below). A caller asks the subsystem
+  for a value and never sees the register space it comes from. Every field is
   typed (`pump.heat.system_supply_line_temperature` is `float | None` for mypy); a test
   checks that with `assert_type`.
 - `async_update()` reads with one `ComponentGroup` per register space, so adjacent registers
