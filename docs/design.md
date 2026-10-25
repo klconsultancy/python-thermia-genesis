@@ -99,7 +99,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
 - A temperature sensor the pump doesn't have reads 20000 (200.00 °C). Every °C register at
   scale 100 declares `nan=ABSENT_SENSOR`, so the value is `None` instead of a bogus reading.
   That includes holding registers: the BMS outdoor temperature (holding 118) reads 20000 when
-  no BMS provides it.
+  no BMS provides it. At scale 10 the same 200.0 °C is 2000, so every °C register at scale 10
+  (the room temperature, input 121, and holding 299) declares `nan=ABSENT_SENSOR_AT_SCALE_10`.
 - Decoding itself is `modbus_connection`'s; our tests check it per field type through the
   components, using the worked examples of chapter 2.1.
 
