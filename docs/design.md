@@ -75,9 +75,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   which no real COP is, decodes as `None`; an energy of 0 can be real (the reference
   pump's heating aux heater) and stays 0. The Home Assistant integration should disable
   these entities by default, since they are verified on a Calibra 17.1.11 only
-  (ha-thermia-genesis#4). The day block
-  next to them (input 330–339) is not mapped: its kWh didn't match the display's day
-  values.
+  (ha-thermia-genesis#4). The day block next to them (input 330–339) is not mapped: its
+  kWh didn't match the display's day values.
 - A register belongs to the subsystem of the chapter (4–9) that lists it. Chapters 4–9 leave
   some registers out or group them oddly, so these are assigned explicitly:
   - cooling: holding 105 and 106 (start/stop temperature), discrete 47, 238 and 242;
