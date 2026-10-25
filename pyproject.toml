@@ -23,13 +23,13 @@ classifiers = [
   "Topic :: Home Automation",
   "Typing :: Typed",
 ]
-dependencies = ["modbus-connection>=4.12.3,<5"]
+dependencies = ["modbus-connection>=4.12.3"]
 
 [project.scripts]
 thermia-genesis = "thermia_genesis.cli:main"
 
 [project.optional-dependencies]
-tmodbus = ["modbus-connection[tmodbus]>=4.12.3,<5"]
+tmodbus = ["modbus-connection[tmodbus]>=4.12.3"]
 
 [project.urls]
 Homepage = "https://github.com/klconsultancy/python-thermia-genesis"
