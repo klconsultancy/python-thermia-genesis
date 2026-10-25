@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.2.1...v0.3.0) (2026-10-25)
+
+
+### Features
+
+* map the energy statistics (input 348-397) ([#51](https://github.com/klconsultancy/python-thermia-genesis/issues/51)) ([a0bc16e](https://github.com/klconsultancy/python-thermia-genesis/commit/a0bc16e4d6be21bcdbf4563cbc822ddaa0640685))
+
 ## [0.2.1](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.2.0...v0.2.1) (2026-10-25)
 
 
