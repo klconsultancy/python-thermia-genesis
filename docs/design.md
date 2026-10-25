@@ -175,6 +175,9 @@ pump.status.operational_mode
 
 ## Tooling and process
 
+- Tests use `modbus_connection`'s mock unit, and end-to-end tests run the library over real
+  Modbus TCP against an in-process `tmodbus` server that replays a captured fixture
+  (`tests/fixtures/`) and refuses every address the fixture doesn't hold.
 - Python ≥ 3.12, tested on 3.12, 3.13 and 3.14.
 - uv (with a committed `uv.lock`), hatchling, ruff (`ALL` rules), mypy strict, prek.
 - Strict TDD: red, green, refactor. CI enforces 100% line and branch coverage.
