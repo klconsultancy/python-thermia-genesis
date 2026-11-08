@@ -37,9 +37,9 @@ class EnergyStatistics(Subsystem):
     """The energy statistics subsystem.
 
     Each circuit has a block of 9 registers: auxiliary heater, consumed, delivered, COP and
-    natural source. The display calls the periods months 1-12 and months 13-24, presumably
-    the current 12 months and the 12 before; whether they roll per month or per calendar
-    year is not verified yet (#33).
+    natural source. The display calls the periods months 1-12 and months 13-24: the last 12
+    completed months and the 12 before. Both windows roll per month, so a value can drop
+    when a month falls out of the window (#33).
     """
 
     # Heating, months 1-12
