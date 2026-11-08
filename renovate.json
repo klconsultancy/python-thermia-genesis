@@ -1,0 +1,81 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "description": "Updates come on the 1st and the 15th, grouped, and are merged once main's required checks pass, unless they raise a major version. release-please collects the fix(deps) ones in the release pull request, which is merged by hand.",
+  "timezone": "Europe/Brussels",
+  "schedule": ["* 0-8 1,15 * *"],
+  "platformCommit": "enabled",
+  "semanticCommits": "enabled",
+  "automerge": true,
+  "platformAutomerge": true,
+  "automergeType": "pr",
+  "rebaseWhen": "behind-base-branch",
+  "vulnerabilityAlerts": {
+    "description": "Security fixes come at once, outside the schedule.",
+    "schedule": ["at any time"]
+  },
+  "pre-commit": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "description": "Refreshes uv.lock, which pins the dev tools and the versions CI tests against; no release contains it.",
+    "enabled": true,
+    "schedule": ["* 0-8 1,15 * *"],
+    "semanticCommitType": "build"
+  },
+  "customManagers": [
+    {
+      "description": "uv's version in pyproject.toml, which CI requires to equal the dev container's and the prek hook's.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^pyproject\\.toml$/"],
+      "matchStrings": ["required-version = \"==(?<currentValue>[0-9.]+)\""],
+      "depNameTemplate": "astral-sh/uv",
+      "datasourceTemplate": "github-releases"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "A library keeps its runtime dependency ranges wide; it only raises a lower bound when a new version falls outside the range. Home Assistant pins modbus-connection per release, so CI tests the lower bound. Such a change reaches users, so it is a fix release-please releases.",
+      "matchDepTypes": ["project.dependencies", "project.optional-dependencies"],
+      "rangeStrategy": "widen",
+      "semanticCommitType": "fix",
+      "groupName": "runtime dependencies"
+    },
+    {
+      "description": "The dev and release groups, which no release contains.",
+      "matchDepTypes": ["dependency-groups"],
+      "rangeStrategy": "widen",
+      "semanticCommitType": "build",
+      "groupName": "dev dependencies"
+    },
+    {
+      "description": "uv in the dev container, pyproject.toml and the prek hook together: CI fails while they differ.",
+      "matchPackageNames": ["ghcr.io/astral-sh/uv", "astral-sh/uv", "astral-sh/uv-pre-commit"],
+      "semanticCommitType": "build",
+      "groupName": "uv"
+    },
+    {
+      "description": "The dev container, which no release contains.",
+      "matchFileNames": [".devcontainer/**"],
+      "matchPackageNames": ["!ghcr.io/astral-sh/uv"],
+      "semanticCommitType": "build",
+      "groupName": "devcontainer"
+    },
+    {
+      "description": "A new Python minor version is raised by hand, in the dev container, CI and the classifiers together; only the image's digest comes from here.",
+      "matchPackageNames": ["mcr.microsoft.com/devcontainers/python"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "semanticCommitType": "ci",
+      "groupName": "actions"
+    },
+    {
+      "description": "A major version waits for review.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    }
+  ]
+}
