@@ -16,6 +16,9 @@ terms before changing code.
   `test:`, `refactor:`, `build:`, `ci:`, `chore:`). They drive release-please.
 - When a design choice or domain term changes, update `docs/design.md` or `CONTEXT.md` in
   the same PR. Do not create ADRs.
+- Dependency updates come from Renovate (`renovate.json`): grouped on the 1st and the 15th
+  and automerged once CI passes, except majors. A new Python minor version is raised by
+  hand.
 
 ## Commands
 
