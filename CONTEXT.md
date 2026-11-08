@@ -53,6 +53,5 @@ marked "(EM)" only exist with an extension module.
 : The energy and COP the display shows per circuit (heating, tap water) for *months 1–12*
 and *months 13–24*: auxiliary heater, consumed, delivered, COP and natural source (the
 energy taken from the ground or air). *Combined* on the display is the sum of both circuits
-and has no registers of its own. Presumably months 1–12 are the current 12 months and months
-13–24 the 12 before; whether the period rolls per month or per calendar year is not verified
-yet (#33).
+and has no registers of its own. Months 1–12 are the last 12 completed months and months
+13–24 the 12 before; both roll per month, so a value can drop (#33).
