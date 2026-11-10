@@ -10,13 +10,20 @@ The class builds one ``modbus_connection`` component per register space it uses,
 field reads its value from that component. Callers see typed attributes only.
 """
 
+from collections.abc import Callable
+from enum import IntEnum
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Never, NoReturn, overload
 
 from modbus_connection import ModbusUnit
 from modbus_connection.model import Component
 from modbus_connection.model import coil as _coil
 from modbus_connection.model import discrete_input as _discrete_input
-from modbus_connection.model.fields import CoilField, DiscreteInputField, RegisterField
+from modbus_connection.model.fields import (
+    CoilField,
+    DiscreteInputField,
+    RegisterField,
+    WriteValidator,
+)
 
 type Space = Literal["coil", "discrete", "input", "holding"]
 
@@ -43,6 +50,11 @@ class Field[T]:
         """Remember the attribute name, which is also the field's name in its component."""
         self.name = name
 
+    @property
+    def writable(self) -> bool:
+        """Whether ``Subsystem.write`` can write the field."""
+        return bool(self.field.writable)
+
     if TYPE_CHECKING:
 
         @overload
@@ -58,14 +70,55 @@ class Field[T]:
         return getattr(obj.components[self.space], self.name)  # type: ignore[attr-defined]
 
     def __set__(self, obj: object, value: Never) -> NoReturn:
-        """Refuse assignment: the map is read-only until the write API (#19)."""
-        msg = f"{self.name} is read-only"
+        """Refuse assignment: a write is I/O, so it goes through ``Subsystem.write``."""
+        if self.writable:
+            msg = f"{self.name} can't be assigned; use await {type(obj).__name__}.write()"
+        else:
+            msg = f"{self.name} is read-only"
         raise AttributeError(msg)
 
 
-def coil(address: int) -> Field[bool]:
-    """Declare a coil (FC01) of the subsystem."""
-    return Field("coil", _coil(address))
+def between(low: float, high: float) -> WriteValidator:
+    """Accept a value from ``low`` to ``high``, both included."""
+
+    def validate(value: float) -> float:
+        if not low <= value <= high:
+            msg = f"must be {low}-{high}, got {value}"
+            raise ValueError(msg)
+        return value
+
+    return validate
+
+
+def at_least(low: float) -> WriteValidator:
+    """Accept a value of ``low`` or more."""
+
+    def validate(value: float) -> float:
+        if value < low:
+            msg = f"must be at least {low}, got {value}"
+            raise ValueError(msg)
+        return value
+
+    return validate
+
+
+def member_of[E: IntEnum](enum_type: type[E]) -> Callable[[int], E]:
+    """Accept a member of ``enum_type``, or the value of one."""
+
+    def validate(value: int) -> E:
+        try:
+            return enum_type(value)
+        except ValueError:
+            names = ", ".join(member.name for member in enum_type)
+            msg = f"must be one of {names}, got {value}"
+            raise ValueError(msg) from None
+
+    return validate
+
+
+def coil(address: int, *, writable: bool | WriteValidator = False) -> Field[bool]:
+    """Declare a coil (FC01, written with FC05) of the subsystem."""
+    return Field("coil", _coil(address, writable=writable))
 
 
 def discrete_input(address: int) -> Field[bool]:
@@ -113,3 +166,19 @@ class Subsystem:
         self.components: dict[Space, Component] = {
             space: component_type(unit) for space, component_type in self.component_types.items()
         }
+
+    async def write[T](self, field: Field[T], value: T) -> None:
+        """Write ``value`` to ``field`` on the pump.
+
+        The value read back appears after the next update. Raises ``AttributeError`` for a
+        read-only field or one the subsystem doesn't declare, and ``ValueError`` for a value
+        the field's validator refuses or its register can't hold.
+        """
+        if getattr(type(self), field.name, None) is not field:
+            msg = f"{type(self).__name__} has no field {field.name}"
+            raise AttributeError(msg)
+        try:
+            await self.components[field.space].write(field.name, value)
+        except ValueError as err:
+            msg = f"{field.name} {err}"
+            raise ValueError(msg) from err

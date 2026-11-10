@@ -12,7 +12,7 @@ from modbus_connection.model import Component
 from modbus_connection.model.fields import CoilField, DiscreteInputField, NumberField
 
 from thermia_genesis import v17_1
-from thermia_genesis.subsystem import Subsystem
+from thermia_genesis.subsystem import Field, Subsystem
 from thermia_genesis.v17_1 import ABSENT_SENSOR, ABSENT_SENSOR_AT_SCALE_10
 
 PROTOCOL = Path(__file__).parents[1] / "docs/protocol/17.1"
@@ -386,3 +386,44 @@ def test_field_has_the_documented_unit(space: str, address: int, unit: str | Non
     documented = DOCUMENTED[space, address]
     if documented.unit not in NOT_A_UNIT:
         assert unit == documented.unit, documented.description
+
+
+# The fields the write API covers so far (#19), per subsystem; docs/design.md (Register map).
+WRITABLE = {
+    "HeatPumpUnit": {
+        "reset_all_alarms",
+        "enable_tap_water",
+        "enable_heat",
+        "power_consumption_control_mode",
+        "input_power_limit",
+    },
+    "Heat": {"comfort_wheel_setting"},
+    "TapWater": {"start_temperature", "stop_temperature"},
+    "Status": {"operational_mode"},
+}
+
+
+def subsystems() -> list[type[Subsystem]]:
+    """Every subsystem class of the 17.1 map."""
+    found: list[type[Subsystem]] = []
+    for info in pkgutil.iter_modules(v17_1.__path__):
+        module = importlib.import_module(f"{v17_1.__name__}.{info.name}")
+        found.extend(
+            member
+            for member in vars(module).values()
+            if inspect.isclass(member)
+            and issubclass(member, Subsystem)
+            and member.__module__ == module.__name__
+        )
+    return found
+
+
+@pytest.mark.parametrize("subsystem", subsystems(), ids=lambda subsystem: subsystem.__name__)
+def test_writes_only_the_fields_the_write_api_covers(subsystem: type[Subsystem]) -> None:
+    writable = {
+        name
+        for name in dir(subsystem)
+        if isinstance(field := getattr(subsystem, name), Field) and field.writable
+    }
+
+    assert writable == WRITABLE.get(subsystem.__name__, set())

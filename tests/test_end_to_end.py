@@ -20,10 +20,14 @@ from tmodbus.pdu import (
     ReadDiscreteInputsPDU,
     ReadHoldingRegistersPDU,
     ReadInputRegistersPDU,
+    WriteSingleCoilPDU,
+    WriteSingleRegisterPDU,
 )
 from tmodbus.server import AsyncTcpServer, ModbusRequestRouter
 
 from thermia_genesis import ThermiaGenesis, cli
+from thermia_genesis.v17_1.heat import Heat
+from thermia_genesis.v17_1.heat_pump_unit import HeatPumpUnit
 
 REFERENCE_PUMP: dict[str, Any] = json.loads(
     (Path(__file__).parent / "fixtures" / "calibra7-17.1.11.json").read_text(encoding="utf-8")
@@ -42,7 +46,10 @@ def free_port() -> int:
 
 
 def router_for(registers: dict[str, dict[str, Any]]) -> ModbusRequestRouter:
-    """Serve ``registers`` (a fixture's raw registers); refuse any other address."""
+    """Serve ``registers`` (a fixture's raw registers); refuse any other address.
+
+    A write to a coil or holding register the fixture holds changes ``registers``.
+    """
     router = ModbusRequestRouter()
 
     def serve(space: str) -> Callable[[int, Request], Any]:
@@ -59,6 +66,20 @@ def router_for(registers: dict[str, dict[str, Any]]) -> ModbusRequestRouter:
     router.register(ReadDiscreteInputsPDU)(serve("discrete"))
     router.register(ReadInputRegistersPDU)(serve("input"))
     router.register(ReadHoldingRegistersPDU)(serve("holding"))
+
+    def store(space: str) -> Callable[[int, WriteSingleCoilPDU | WriteSingleRegisterPDU], Any]:
+        async def handle(
+            _unit_id: int, request: WriteSingleCoilPDU | WriteSingleRegisterPDU
+        ) -> Any:  # noqa: ANN401
+            if str(request.address) not in registers[space]:
+                raise IllegalDataAddressError(request.function_code)
+            registers[space][str(request.address)] = request.value
+            return request.value
+
+        return handle
+
+    router.register(WriteSingleCoilPDU)(store("coil"))
+    router.register(WriteSingleRegisterPDU)(store("holding"))
     return router
 
 
@@ -118,6 +139,27 @@ async def test_leaves_out_a_part_whose_enable_coil_is_refused() -> None:
         assert report.complete
         assert pump.hgw is None
         assert pump.cooling is not None
+    finally:
+        await connection.close()
+        await server.stop()
+
+
+async def test_writes_settings_and_reads_them_back() -> None:
+    registers = {space: dict(values) for space, values in REFERENCE_PUMP["registers"].items()}
+    server, port = await serve_fixture(registers)
+    connection = ModbusConnection(ModbusTcpParams(host="127.0.0.1", port=port))
+    try:
+        await connection.connect()
+        pump = ThermiaGenesis(connection.for_unit(1))
+        await pump.async_update()
+
+        await pump.heat.write(Heat.comfort_wheel_setting, 21.5)
+        await pump.heat_pump.write(HeatPumpUnit.enable_heat, False)  # noqa: FBT003
+        await pump.async_update()
+
+        assert registers["holding"]["5"] == 2150
+        assert pump.heat.comfort_wheel_setting == 21.5
+        assert pump.heat_pump.enable_heat is False
     finally:
         await connection.close()
         await server.stop()
