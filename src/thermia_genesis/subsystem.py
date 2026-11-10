@@ -11,6 +11,7 @@ field reads its value from that component. Callers see typed attributes only.
 """
 
 import math
+from dataclasses import dataclass
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Never, NoReturn, overload
 
@@ -54,6 +55,19 @@ class Field[T]:
     def writable(self) -> bool:
         """Whether ``Subsystem.write`` can write the field: a writable coil or holding register."""
         return self.space in {"coil", "holding"} and bool(self.field.writable)
+
+    @property
+    def validator(self) -> "Between | MemberOf | None":
+        """The validator a writable register declares, which says what it accepts; else None."""
+        validator = self.field.writable
+        return validator if isinstance(validator, Between | MemberOf) else None
+
+    @property
+    def resolution(self) -> float | None:
+        """The step of a register's value (0.01 at scale 100, 1 for an integer); None for a bit."""
+        if self.space in {"coil", "discrete"}:
+            return None
+        return getattr(self.field, "scale", 1)
 
     def check(self, value: object) -> None:
         """Refuse a value of the wrong type, or one the register can't represent exactly.
@@ -104,30 +118,45 @@ class Field[T]:
         raise AttributeError(msg)
 
 
-def between(low: float, high: float) -> WriteValidator:
-    """Accept a value from ``low`` to ``high``, both included."""
+@dataclass(frozen=True)
+class Between:
+    """A validator that accepts a value from ``low`` to ``high``, both included."""
 
-    def validate(value: float) -> float:
-        if not low <= value <= high:
-            msg = f"must be from {low} to {high}, got {value}"
+    low: float
+    high: float
+
+    def __call__(self, value: float) -> float:
+        """Return ``value``, or raise ``ValueError`` when it's out of range."""
+        if not self.low <= value <= self.high:
+            msg = f"must be from {self.low} to {self.high}, got {value}"
             raise ValueError(msg)
         return value
 
-    return validate
 
+@dataclass(frozen=True)
+class MemberOf:
+    """A validator that accepts a member of ``enum``, or the value of one."""
 
-def member_of(enum_type: type[IntEnum]) -> WriteValidator:
-    """Accept a member of ``enum_type``, or the value of one."""
+    enum: type[IntEnum]
 
-    def validate(value: int) -> IntEnum:
+    def __call__(self, value: int) -> IntEnum:
+        """Return the member for ``value``, or raise ``ValueError`` when there is none."""
         try:
-            return enum_type(value)
+            return self.enum(value)
         except ValueError:
-            names = ", ".join(member.name for member in enum_type)
+            names = ", ".join(member.name for member in self.enum)
             msg = f"must be one of {names}, got {value}"
             raise ValueError(msg) from None
 
-    return validate
+
+def between(low: float, high: float) -> Between:
+    """Accept a value from ``low`` to ``high``, both included."""
+    return Between(low, high)
+
+
+def member_of(enum_type: type[IntEnum]) -> MemberOf:
+    """Accept a member of ``enum_type``, or the value of one."""
+    return MemberOf(enum_type)
 
 
 def coil(address: int, *, writable: bool | WriteValidator = False) -> Field[bool]:
