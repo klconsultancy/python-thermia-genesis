@@ -2,7 +2,7 @@
 
 from modbus_connection.model import enum, flags
 
-from thermia_genesis.subsystem import Subsystem, holding_register, input_register
+from thermia_genesis.subsystem import Subsystem, holding_register, input_register, member_of
 from thermia_genesis.v17_1.enums import Demand, OperationalMode, RunningDemands
 
 
@@ -22,4 +22,6 @@ class Status(Subsystem):
     queued_demand_4 = input_register(enum(65, Demand))
     queued_demand_5 = input_register(enum(66, Demand))
 
-    operational_mode = holding_register(enum(0, OperationalMode))
+    operational_mode = holding_register(
+        enum(0, OperationalMode, writable=member_of(OperationalMode))
+    )

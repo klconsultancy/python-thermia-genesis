@@ -15,8 +15,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   passive cooling.
 - Modbus TCP first. RTU is not excluded: `modbus-connection` already supports serial and
   RTU-over-TCP, so adding it is mostly config-flow work in the integration.
-- Read-only first. A write API will be designed and tested in the library (#19), but the
-  Home Assistant integration does not expose it until a later milestone.
+- Read first, then writes: the write API (#19, see Public API) covers a few settings so
+  far and grows field by field.
 
 ## Connection
 
@@ -52,9 +52,9 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   from those declarations (`HeatCoils`, `HeatDiscreteInputs`, `HeatInputRegisters`,
   `HeatHoldingRegisters`), so a component holds one space, as `modbus_connection` requires.
   Each declared field is a typed descriptor that reads its value from that component.
-  Assigning to a field raises `AttributeError` (and mypy rejects it) until the write API
-  (#19). A subclass keeps the fields it inherits, so a later firmware can extend a
-  subsystem of 17.1 instead of copying it.
+  Assigning to a field raises `AttributeError` (and mypy rejects it): a write is I/O, so it
+  goes through `await subsystem.write(...)` (see Public API). A subclass keeps the fields
+  it inherits, so a later firmware can extend a subsystem of 17.1 instead of copying it.
 - Field names follow the document's description, without the name of their own subsystem
   as prefix: the class already says it (`pump.tap_water.top_temperature`, not
   `tap_water_top_temperature`; `pump.mix_valve_1.position`). A register named after another
@@ -62,8 +62,28 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
 - The optional parts mix valve 1 (chapter 5.2) and HGW (chapter 6.2) are subsystems of their
   own (`MixValve1` in `heat`, `Hgw` in `tap_water`), so they can be left out like the other
   optional subsystems.
-- The map is read-only for now: no field is declared writable. Writing coils and holding
-  registers comes with the write API (#19, see Scope).
+- A coil or holding register is writable only where the map says so: `coil(9,
+  writable=True)`, or a validator from `thermia_genesis.subsystem` on a register field
+  (`between(10, 40)`, `member_of(OperationalMode)`). Discrete inputs and input registers are
+  never writable, whatever their declaration says. A test lists the writable fields, so each
+  one is a deliberate choice. So far they are what the Home Assistant integration needs
+  first: the coils `reset_all_alarms`, `enable_tap_water` and `enable_heat`; the holding
+  registers `comfort_wheel_setting`, the tap water `start_temperature` and
+  `stop_temperature`, `operational_mode`, `power_consumption_control_mode` and
+  `input_power_limit`.
+- The protocol document gives no range for any setting, so a validator holds a range with
+  a source, recorded in the errata, or else the range the register can hold without
+  changing its meaning. `modbus_connection` encodes leniently: a signed 16-bit field takes
+  up to 65535 and reads it back negative, an unsigned field writes a negative value as its
+  two's complement, and an enum field writes an unknown value as is. So every writable
+  register field has a validator that stays within its decoded range.
+- Before the validator, `Subsystem.write` checks the value itself (`Field.check`): a coil
+  takes a `bool` only, a register a number that is not a `bool`, finite, and a whole
+  multiple of the register's resolution (0.01 at scale 100, 1 for an integer or an enum).
+  The encoding would otherwise round it, so 0.04 kW would write 0 and 2.9 would write mode
+  2, which is EVU in SG-Ready mode. The check uses the field's fixed scale; no field of
+  the map takes its scale from another register. A test enforces that every writable
+  register field has a validator.
 - Chapters 4–9 list a few registers that chapter 3 doesn't (HGW, pool temperatures). They
   are mapped from their chapter and recorded in the errata.
 - The energy statistics (input 348–365 and 380–397) are in no edition of the protocol
@@ -137,6 +157,9 @@ pump.heat_pump.compressor_operating_hours
 pump.heat.system_supply_line_temperature
 pump.cooling.circuit_supply_line_temperature
 pump.status.operational_mode
+
+await pump.heat.write(Heat.comfort_wheel_setting, 21.5)
+await pump.status.write(Status.operational_mode, OperationalMode.STANDBY)
 ```
 
 - `ThermiaGenesis` is a `modbus_connection` `Device`. Its subsystems are `heat_pump`,
@@ -145,6 +168,18 @@ pump.status.operational_mode
   for a value and never sees the register space it comes from. Every field is
   typed (`pump.heat.system_supply_line_temperature` is `float | None` for mypy); a test
   checks that with `assert_type`.
+- `await subsystem.write(Subsystem.field, value)` writes one field, with FC05 for a coil and
+  FC06 for a register. The field is the class attribute, so mypy checks the value's type
+  against the field's (`Field[float]` takes a float). It raises `AttributeError` for a
+  read-only field or a field of another subsystem, `TypeError` for a value of the wrong
+  type, and `ValueError`, prefixed with the field name, for a value the checks or the
+  validator refuse or the register can't hold; nothing is written then. The field keeps its
+  old value until the next `async_update()` reads it back: what counts is what the pump
+  accepted, not what was sent. A check across fields (the tap water start below the stop
+  temperature) is the caller's. Tests write to the mock unit or the in-process tmodbus
+  server only, never to a real pump.
+- `Subsystem.field.writable` tells whether a field can be written, so the Home Assistant
+  integration can choose between a sensor and a settable entity.
 - `async_update()` reads with one `ComponentGroup` per register space, so adjacent registers
   share a read, also across subsystems. A read never bridges a gap (`max_gap = 0`): it
   touches only mapped addresses. The reference pump answers any address, but another model

@@ -4,6 +4,7 @@ from modbus_connection.model import enum, gauge, integer
 
 from thermia_genesis.subsystem import (
     Subsystem,
+    between,
     coil,
     discrete_input,
     holding_register,
@@ -53,7 +54,10 @@ class Heat(Subsystem):
     # System supply set points
     max_limitation_set_point_curve = holding_register(gauge(3, 0.01, nan=ABSENT_SENSOR, unit="°C"))
     min_limitation_set_point_curve = holding_register(gauge(4, 0.01, nan=ABSENT_SENSOR, unit="°C"))
-    comfort_wheel_setting = holding_register(gauge(5, 0.01, nan=ABSENT_SENSOR, unit="°C"))
+    # The range is CJNE/thermiagenesis's, not Thermia's; see errata.md.
+    comfort_wheel_setting = holding_register(
+        gauge(5, 0.01, nan=ABSENT_SENSOR, writable=between(10, 40), unit="°C")
+    )
     heating_season_stop_temperature = holding_register(
         gauge(16, 0.01, nan=ABSENT_SENSOR, unit="°C")
     )

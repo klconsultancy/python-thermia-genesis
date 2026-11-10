@@ -4,6 +4,7 @@ from modbus_connection.model import gauge, integer, uint32
 
 from thermia_genesis.subsystem import (
     Subsystem,
+    between,
     coil,
     discrete_input,
     holding_register,
@@ -28,8 +29,13 @@ class TapWater(Subsystem):
     operating_hours = input_register(uint32(50, unit="h"))
     desired_gear = input_register(integer(139, signed=False))
 
-    start_temperature = holding_register(gauge(22, 0.01, nan=ABSENT_SENSOR, unit="°C"))
-    stop_temperature = holding_register(gauge(23, 0.01, nan=ABSENT_SENSOR, unit="°C"))
+    # The range is CJNE/thermiagenesis's, not Thermia's; see errata.md.
+    start_temperature = holding_register(
+        gauge(22, 0.01, nan=ABSENT_SENSOR, writable=between(35, 60), unit="°C")
+    )
+    stop_temperature = holding_register(
+        gauge(23, 0.01, nan=ABSENT_SENSOR, writable=between(35, 60), unit="°C")
+    )
     maximum_allowed_gear = holding_register(integer(28, signed=False))
     minimum_allowed_gear = holding_register(integer(29, signed=False))
 

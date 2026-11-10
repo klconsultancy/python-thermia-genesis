@@ -51,7 +51,17 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-The library only reads; it never writes to the pump.
+A few settings can be written; the pump applies them on its own terms and the next update
+reads back what it accepted:
+
+```python
+from thermia_genesis.v17_1.heat import Heat
+
+await pump.heat.write(Heat.comfort_wheel_setting, 21.5)
+```
+
+`Heat.comfort_wheel_setting.writable` tells whether a field can be written. Writing a
+setting changes how the pump runs; only write what you understand.
 
 ### Dump a pump
 

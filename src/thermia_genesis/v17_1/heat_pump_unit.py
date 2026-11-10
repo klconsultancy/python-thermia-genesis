@@ -4,6 +4,7 @@ from modbus_connection.model import enum, gauge, integer, uint32
 
 from thermia_genesis.subsystem import (
     Subsystem,
+    between,
     coil,
     discrete_input,
     holding_register,
@@ -16,11 +17,11 @@ from thermia_genesis.v17_1.enums import ImmersionHeater, OutdoorTemperatureSourc
 class HeatPumpUnit(Subsystem):
     """The heat pump unit subsystem."""
 
-    reset_all_alarms = coil(3)
+    reset_all_alarms = coil(3, writable=True)
     enable_external_additional_heater = coil(5)
     enable_flow_pressure_switch = coil(7)
-    enable_tap_water = coil(8)
-    enable_heat = coil(9)
+    enable_tap_water = coil(8, writable=True)
+    enable_heat = coil(9, writable=True)
     enable_brine_out_monitoring = coil(20)
     enable_brine_pump_continuous_operation = coil(21)
     enable_system_circulation_pump = coil(22)
@@ -187,6 +188,10 @@ class HeatPumpUnit(Subsystem):
     # Current and power limitation
     maximum_phase_current = holding_register(integer(119, signed=False, unit="A"))
     compressor_current_hysteresis = holding_register(integer(120, signed=False, unit="A"))
-    # The meaning of each value depends on the mode (SG-Ready or PL/LU); see chapter 3.4.
-    power_consumption_control_mode = holding_register(integer(124, signed=False))
-    input_power_limit = holding_register(gauge(125, 0.1, unit="kW"))
+    # What each value means depends on the controller's power consumption control mode
+    # (SG-Ready or PL/LU), which Modbus can't read; see errata.md.
+    power_consumption_control_mode = holding_register(
+        integer(124, signed=False, writable=between(0, 3))
+    )
+    # Up to what the signed register holds; see errata.md (Write ranges).
+    input_power_limit = holding_register(gauge(125, 0.1, writable=between(0, 3276.7), unit="kW"))
