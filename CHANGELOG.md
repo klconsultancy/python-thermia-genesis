@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.3.0...v0.4.0) (2026-11-10)
+
+
+### Features
+
+* write API for coils and holding registers ([#67](https://github.com/klconsultancy/python-thermia-genesis/issues/67)) ([1b15812](https://github.com/klconsultancy/python-thermia-genesis/commit/1b158122c4927f2b935dd3823123df81460159be))
+
+
+### Documentation
+
+* record that input 157 and 158 match the pump on the reference installation ([#66](https://github.com/klconsultancy/python-thermia-genesis/issues/66)) ([f562aa9](https://github.com/klconsultancy/python-thermia-genesis/commit/f562aa9ec4219a701d479a18dbc99da1587c0c8f))
+* say the energy statistics roll per month ([#61](https://github.com/klconsultancy/python-thermia-genesis/issues/61)) ([0724008](https://github.com/klconsultancy/python-thermia-genesis/commit/072400839be15402235f0bdc3d3476c756a72d53))
+
 ## [0.3.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.2.1...v0.3.0) (2026-10-25)
 
 
