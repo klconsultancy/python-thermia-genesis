@@ -58,13 +58,24 @@ class Field[T]:
 
     @property
     def validator(self) -> "Between | MemberOf | None":
-        """The validator a writable register declares, which says what it accepts; else None."""
+        """What a writable register accepts, as its validator declares; else None.
+
+        None for a coil, a field that can't be written, and a register written with
+        ``writable=True`` or a validator of another kind; a caller falls back to the
+        register's own range then.
+        """
         validator = self.field.writable
-        return validator if isinstance(validator, Between | MemberOf) else None
+        if not self.writable or not isinstance(validator, Between | MemberOf):
+            return None
+        return validator
 
     @property
     def resolution(self) -> float | None:
-        """The step of a register's value (0.01 at scale 100, 1 for an integer); None for a bit."""
+        """The step of a register's value (0.01 at scale 100, 1 for an integer or an enum).
+
+        None for a bit. It is the field's fixed scale; no field of the map takes its scale
+        from another register.
+        """
         if self.space in {"coil", "discrete"}:
             return None
         return getattr(self.field, "scale", 1)
@@ -125,6 +136,12 @@ class Between:
     low: float
     high: float
 
+    def __post_init__(self) -> None:
+        """Refuse bounds the wrong way round, which would refuse every value."""
+        if self.low > self.high:
+            msg = f"low {self.low} is above high {self.high}"
+            raise ValueError(msg)
+
     def __call__(self, value: float) -> float:
         """Return ``value``, or raise ``ValueError`` when it's out of range."""
         if not self.low <= value <= self.high:
@@ -150,7 +167,11 @@ class MemberOf:
 
 
 def between(low: float, high: float) -> Between:
-    """Accept a value from ``low`` to ``high``, both included."""
+    """Accept a value from ``low`` to ``high``, both included.
+
+    The map declares validators with ``between`` and ``member_of``; a caller inspects them
+    as ``Between`` and ``MemberOf``.
+    """
     return Between(low, high)
 
 

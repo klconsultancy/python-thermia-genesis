@@ -181,7 +181,7 @@ await pump.status.write(Status.operational_mode, OperationalMode.STANDBY)
 - `Subsystem.field.writable` tells whether a field can be written, so the Home Assistant
   integration can choose between a sensor and a settable entity. `Subsystem.field.validator`
   says what it accepts (`Between` with `low` and `high`, `MemberOf` with `enum`; None for a
-  coil), and `Subsystem.field.resolution` its step (0.01 at scale 100, 1 for an integer or
+  coil, a field that can't be written, or a register with another kind of validator), and `Subsystem.field.resolution` its step (0.01 at scale 100, 1 for an integer or
   an enum; None for a coil), so an entity can set its min, max, step or options from them
   instead of repeating them.
 - `async_update()` reads with one `ComponentGroup` per register space, so adjacent registers
