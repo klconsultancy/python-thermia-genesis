@@ -10,6 +10,7 @@ The class builds one ``modbus_connection`` component per register space it uses,
 field reads its value from that component. Callers see typed attributes only.
 """
 
+import math
 from collections.abc import Callable
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Never, NoReturn, overload
@@ -52,8 +53,32 @@ class Field[T]:
 
     @property
     def writable(self) -> bool:
-        """Whether ``Subsystem.write`` can write the field."""
-        return bool(self.field.writable)
+        """Whether ``Subsystem.write`` can write the field: a writable coil or holding register."""
+        return self.space in {"coil", "holding"} and bool(self.field.writable)
+
+    def check(self, value: object) -> None:
+        """Refuse a value of the wrong type, or one the register can't represent exactly.
+
+        Raises ``TypeError`` for a coil value that isn't a ``bool`` or a register value that
+        is, and ``ValueError`` for a value that isn't finite or isn't a whole multiple of the
+        register's resolution, which the encoding would otherwise round.
+        """
+        if self.space == "coil":
+            if not isinstance(value, bool):
+                msg = f"{self.name} takes a bool, got {value!r}"
+                raise TypeError(msg)
+            return
+        if isinstance(value, bool) or not isinstance(value, int | float):
+            msg = f"{self.name} takes a number, got {value!r}"
+            raise TypeError(msg)
+        if not math.isfinite(value):
+            msg = f"{self.name} must be a finite number, got {value}"
+            raise ValueError(msg)
+        resolution = getattr(self.field, "scale", 1)
+        steps = (value - getattr(self.field, "offset", 0)) / resolution
+        if not math.isclose(steps, round(steps), abs_tol=1e-6):
+            msg = f"{self.name} must be a multiple of {resolution:g}, got {value}"
+            raise ValueError(msg)
 
     if TYPE_CHECKING:
 
@@ -84,18 +109,6 @@ def between(low: float, high: float) -> WriteValidator:
     def validate(value: float) -> float:
         if not low <= value <= high:
             msg = f"must be {low}-{high}, got {value}"
-            raise ValueError(msg)
-        return value
-
-    return validate
-
-
-def at_least(low: float) -> WriteValidator:
-    """Accept a value of ``low`` or more."""
-
-    def validate(value: float) -> float:
-        if value < low:
-            msg = f"must be at least {low}, got {value}"
             raise ValueError(msg)
         return value
 
@@ -170,15 +183,21 @@ class Subsystem:
     async def write[T](self, field: Field[T], value: T) -> None:
         """Write ``value`` to ``field`` on the pump.
 
-        The value read back appears after the next update. Raises ``AttributeError`` for a
-        read-only field or one the subsystem doesn't declare, and ``ValueError`` for a value
-        the field's validator refuses or its register can't hold.
+        The field keeps its old value until the next update reads back what the pump
+        accepted. Raises ``AttributeError`` for a read-only field or one the subsystem doesn't
+        declare, ``TypeError`` for a value of the wrong type (see ``Field.check``), and
+        ``ValueError`` for a value the field's validator refuses or its register can't hold.
+        Nothing is written when it raises.
         """
         if getattr(type(self), field.name, None) is not field:
             msg = f"{type(self).__name__} has no field {field.name}"
             raise AttributeError(msg)
+        if not field.writable:
+            msg = f"{field.name} is read-only"
+            raise AttributeError(msg)
+        field.check(value)
         try:
             await self.components[field.space].write(field.name, value)
-        except ValueError as err:
+        except (ValueError, OverflowError) as err:
             msg = f"{field.name} {err}"
             raise ValueError(msg) from err

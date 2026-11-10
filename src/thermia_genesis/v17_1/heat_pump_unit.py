@@ -4,7 +4,6 @@ from modbus_connection.model import enum, gauge, integer, uint32
 
 from thermia_genesis.subsystem import (
     Subsystem,
-    at_least,
     between,
     coil,
     discrete_input,
@@ -189,10 +188,10 @@ class HeatPumpUnit(Subsystem):
     # Current and power limitation
     maximum_phase_current = holding_register(integer(119, signed=False, unit="A"))
     compressor_current_hysteresis = holding_register(integer(120, signed=False, unit="A"))
-    # The meaning of each value depends on the mode (SG-Ready or PL/LU); see chapter 3.4.
-    # What each mode means depends on the controller's power consumption control mode, which
-    # Modbus can't read; see errata.md.
+    # What each value means depends on the controller's power consumption control mode
+    # (SG-Ready or PL/LU), which Modbus can't read; see errata.md.
     power_consumption_control_mode = holding_register(
         integer(124, signed=False, writable=between(0, 3))
     )
-    input_power_limit = holding_register(gauge(125, 0.1, writable=at_least(0), unit="kW"))
+    # Up to what the signed register holds; see errata.md (Write ranges).
+    input_power_limit = holding_register(gauge(125, 0.1, writable=between(0, 3276.7), unit="kW"))
