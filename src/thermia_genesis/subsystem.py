@@ -11,7 +11,6 @@ field reads its value from that component. Callers see typed attributes only.
 """
 
 import math
-from collections.abc import Callable
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Never, NoReturn, overload
 
@@ -60,8 +59,10 @@ class Field[T]:
         """Refuse a value of the wrong type, or one the register can't represent exactly.
 
         Raises ``TypeError`` for a coil value that isn't a ``bool`` or a register value that
-        is, and ``ValueError`` for a value that isn't finite or isn't a whole multiple of the
-        register's resolution, which the encoding would otherwise round.
+        is, and ``ValueError`` (or ``OverflowError`` for a huge value) for a value that isn't
+        finite or isn't a whole multiple of the register's resolution, which the encoding
+        would otherwise round. ``Subsystem.write`` prefixes the field name to the
+        ``ValueError`` and turns an ``OverflowError`` into one.
         """
         if self.space == "coil":
             if not isinstance(value, bool):
@@ -72,12 +73,12 @@ class Field[T]:
             msg = f"{self.name} takes a number, got {value!r}"
             raise TypeError(msg)
         if not math.isfinite(value):
-            msg = f"{self.name} must be a finite number, got {value}"
+            msg = f"must be a finite number, got {value}"
             raise ValueError(msg)
         resolution = getattr(self.field, "scale", 1)
         steps = (value - getattr(self.field, "offset", 0)) / resolution
         if not math.isclose(steps, round(steps), abs_tol=1e-6):
-            msg = f"{self.name} must be a multiple of {resolution:g}, got {value}"
+            msg = f"must be a multiple of {resolution:g}, got {value}"
             raise ValueError(msg)
 
     if TYPE_CHECKING:
@@ -108,17 +109,17 @@ def between(low: float, high: float) -> WriteValidator:
 
     def validate(value: float) -> float:
         if not low <= value <= high:
-            msg = f"must be {low}-{high}, got {value}"
+            msg = f"must be from {low} to {high}, got {value}"
             raise ValueError(msg)
         return value
 
     return validate
 
 
-def member_of[E: IntEnum](enum_type: type[E]) -> Callable[[int], E]:
+def member_of(enum_type: type[IntEnum]) -> WriteValidator:
     """Accept a member of ``enum_type``, or the value of one."""
 
-    def validate(value: int) -> E:
+    def validate(value: int) -> IntEnum:
         try:
             return enum_type(value)
         except ValueError:
@@ -195,8 +196,8 @@ class Subsystem:
         if not field.writable:
             msg = f"{field.name} is read-only"
             raise AttributeError(msg)
-        field.check(value)
         try:
+            field.check(value)
             await self.components[field.space].write(field.name, value)
         except (ValueError, OverflowError) as err:
             msg = f"{field.name} {err}"

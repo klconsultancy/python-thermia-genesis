@@ -81,7 +81,9 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   takes a `bool` only, a register a number that is not a `bool`, finite, and a whole
   multiple of the register's resolution (0.01 at scale 100, 1 for an integer or an enum).
   The encoding would otherwise round it, so 0.04 kW would write 0 and 2.9 would write mode
-  2, which is EVU in SG-Ready mode.
+  2, which is EVU in SG-Ready mode. The check uses the field's fixed scale; no field of
+  the map takes its scale from another register. A test enforces that every writable
+  register field has a validator.
 - Chapters 4–9 list a few registers that chapter 3 doesn't (HGW, pool temperatures). They
   are mapped from their chapter and recorded in the errata.
 - The energy statistics (input 348–365 and 380–397) are in no edition of the protocol

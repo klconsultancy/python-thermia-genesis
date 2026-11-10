@@ -427,3 +427,18 @@ def test_writes_only_the_fields_the_write_api_covers(subsystem: type[Subsystem])
     }
 
     assert writable == WRITABLE.get(subsystem.__name__, set())
+
+
+@pytest.mark.parametrize("subsystem", subsystems(), ids=lambda subsystem: subsystem.__name__)
+def test_writable_register_has_a_validator(subsystem: type[Subsystem]) -> None:
+    # modbus_connection encodes leniently, so a register needs a validator (docs/design.md).
+    unchecked = {
+        name
+        for name in dir(subsystem)
+        if isinstance(field := getattr(subsystem, name), Field)
+        and field.writable
+        and field.space == "holding"
+        and not callable(field.field.writable)
+    }
+
+    assert unchecked == set()

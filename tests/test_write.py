@@ -79,7 +79,7 @@ async def test_between_refuses_a_value_out_of_range(
 ) -> None:
     settings = Settings(mock_modbus_unit)
 
-    with pytest.raises(ValueError, match=r"set_point must be 10-40, got"):
+    with pytest.raises(ValueError, match=r"set_point must be from 10 to 40, got"):
         await settings.write(Settings.set_point, value)
     assert 5 not in mock_modbus_unit.holding
 
@@ -230,3 +230,26 @@ async def test_subclass_writes_a_field_it_inherits(mock_modbus_unit: MockModbusU
     await settings.write(MoreSettings.set_point, 22.5)
 
     assert mock_modbus_unit.holding[5] == 2250
+
+
+@pytest.mark.parametrize(("field", "value"), [(Settings.limit, 1e308), (Settings.control, 10**400)])
+async def test_write_refuses_a_value_too_big_to_check(
+    mock_modbus_unit: MockModbusUnit, field: Field[Any], value: float
+) -> None:
+    settings = Settings(mock_modbus_unit)
+
+    with pytest.raises(ValueError, match=rf"{field.name} "):
+        await settings.write(field, value)
+    assert mock_modbus_unit.holding == {}
+
+
+async def test_between_says_its_range_with_negative_bounds(
+    mock_modbus_unit: MockModbusUnit,
+) -> None:
+    class Limits(Subsystem):
+        low_alarm = holding_register(gauge(68, 0.01, writable=between(-15, -5), unit="°C"))
+
+    limits = Limits(mock_modbus_unit)
+
+    with pytest.raises(ValueError, match=r"low_alarm must be from -15 to -5, got -20"):
+        await limits.write(Limits.low_alarm, -20)
