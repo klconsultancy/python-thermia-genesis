@@ -8,10 +8,13 @@ from modbus_connection.mock import MockModbusUnit, WriteEvent
 from modbus_connection.model import enum, gauge, integer
 
 from thermia_genesis.subsystem import (
+    Between,
     Field,
+    MemberOf,
     Subsystem,
     between,
     coil,
+    discrete_input,
     holding_register,
     input_register,
     member_of,
@@ -31,6 +34,8 @@ class Settings(Subsystem):
     unchecked = holding_register(gauge(7, 0.1, writable=True))
     reading = holding_register(gauge(6, 0.01, unit="°C"))
     measured = input_register(gauge(12, 0.01, writable=True, unit="°C"))
+    shown = input_register(gauge(13, 0.01, writable=between(10, 40), unit="°C"))
+    alarm = discrete_input(4)
 
 
 class MoreSettings(Settings):
@@ -253,3 +258,41 @@ async def test_between_says_its_range_with_negative_bounds(
 
     with pytest.raises(ValueError, match=r"low_alarm must be from -15 to -5, got -20"):
         await limits.write(Limits.low_alarm, -20)
+
+
+def test_a_range_validator_says_its_bounds() -> None:
+    assert Settings.set_point.validator == Between(10, 40)
+    assert (Settings.set_point.validator.low, Settings.set_point.validator.high) == (10, 40)
+
+
+def test_a_member_validator_says_its_enum() -> None:
+    assert Settings.mode.validator == MemberOf(OperationalMode)
+    assert Settings.mode.validator.enum is OperationalMode
+
+
+@pytest.mark.parametrize("field", [Settings.enable, Settings.unchecked, Settings.reading])
+def test_a_field_without_a_validator_has_none(field: Field[Any]) -> None:
+    assert field.validator is None
+
+
+@pytest.mark.parametrize(
+    ("field", "resolution"),
+    [(Settings.set_point, 0.01), (Settings.limit, 0.1), (Settings.control, 1), (Settings.mode, 1)],
+)
+def test_a_register_says_its_resolution(field: Field[Any], resolution: float) -> None:
+    assert field.resolution == resolution
+
+
+@pytest.mark.parametrize("field", [Settings.enable, Settings.alarm])
+def test_a_bit_has_no_resolution(field: Field[Any]) -> None:
+    assert field.resolution is None
+
+
+def test_a_field_that_cannot_be_written_has_no_validator() -> None:
+    # An input register is never writable, whatever its declaration says.
+    assert Settings.shown.validator is None
+
+
+def test_between_refuses_bounds_the_wrong_way_round() -> None:
+    with pytest.raises(ValueError, match="low 40 is above high 10"):
+        between(40, 10)

@@ -60,7 +60,8 @@ from thermia_genesis.v17_1.heat import Heat
 await pump.heat.write(Heat.comfort_wheel_setting, 21.5)
 ```
 
-`Heat.comfort_wheel_setting.writable` tells whether a field can be written. Writing a
+`Heat.comfort_wheel_setting.writable` tells whether a field can be written, `.validator`
+what it accepts (`Between(low=10, high=40)`, or None) and `.resolution` its step (0.01). Writing a
 setting changes how the pump runs; only write what you understand.
 
 ### Dump a pump

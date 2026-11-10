@@ -19,6 +19,10 @@ input registers 30001, holding registers 40001). The library uses the zero-based
 **Scale**
 : The factor the transmitted value is larger than the real value (1, 10 or 100).
 
+**Resolution**
+: The smallest step of a register's real value: 1 divided by its scale (0.01 at scale 100).
+A value written must be a whole multiple of it.
+
 **MSB / LSB**
 : The high and low 16-bit halves of a 32-bit counter, stored in two registers.
 
