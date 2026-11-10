@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.4.0...v0.5.0) (2026-11-10)
+
+
+### Features
+
+* tell what a writable field accepts ([#68](https://github.com/klconsultancy/python-thermia-genesis/issues/68)) ([b026ff6](https://github.com/klconsultancy/python-thermia-genesis/commit/b026ff6e167c22f368dd5de5b8a2c6f52033c686))
+
 ## [0.4.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.3.0...v0.4.0) (2026-11-10)
 
 
