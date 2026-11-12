@@ -50,7 +50,7 @@ dev = [
 release = ["twine"]
 
 [tool.uv]
-required-version = "==0.13.5"
+required-version = "==0.13.7"
 
 [tool.hatch.build.targets.sdist]
 # Only the package: the Thermia protocol transcription and the tests that read it stay in git.
