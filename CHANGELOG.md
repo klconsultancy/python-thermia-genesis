@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.5.0...v0.5.1) (2026-11-13)
+
+
+### Documentation
+
+* record that the pump clears the alarm reset coil itself ([#75](https://github.com/klconsultancy/python-thermia-genesis/issues/75)) ([7f2a74a](https://github.com/klconsultancy/python-thermia-genesis/commit/7f2a74adad9abb092e9bce6385a98d23774183e7))
+
 ## [0.5.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.4.0...v0.5.0) (2026-11-10)
 
 
