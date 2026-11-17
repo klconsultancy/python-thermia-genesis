@@ -10,7 +10,7 @@ jobs:
   # release-please as the release GitHub App, in the shared workflow.
   release-please:
     permissions: {} # it acts as the app
-    uses: klconsultancy/workflows/.github/workflows/release-please.yml@c9502596494c47704b890d5cc66de73c06ba93d8 # main
+    uses: klconsultancy/workflows/.github/workflows/release-please.yml@e6939b6be36b833baf87de0ce25c0ff4cac96b2f # v1.0.0
     with:
       app-client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
     secrets:
