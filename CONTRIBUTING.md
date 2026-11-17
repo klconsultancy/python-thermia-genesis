@@ -24,7 +24,7 @@ Never write to a real heat pump from a test: use `modbus_connection`'s mock unit
 ## Pull requests
 
 - Keep a pull request to one change, with tests.
-- CI (lint, type check, tests on every supported Python version and on the lowest and newest `modbus-connection`, a build of the distribution, dependency review and CodeQL) must pass before merging.
+- CI (lint, type check, tests on every supported Python version and on the lowest and newest `modbus-connection`, a build of the distribution, dependency review and CodeQL; zizmor when a workflow changes) must pass before merging.
 - Claude reviews every pull request against `CLAUDE.md`, `AGENTS.md`, `docs/design.md`, `CONTEXT.md` and `docs/errata.md`, with inline comments and a summary. It never approves and is not a required check: a person reads the comments and merges.
 - Pull requests are squash-merged, so the pull request title becomes the commit message on `main`. Write it as a [Conventional Commit](https://www.conventionalcommits.org/) with a short imperative description, such as `fix: read input 137 at scale 100`: release-please derives the next version and the changelog from these titles. Use `feat!:` or a `BREAKING CHANGE:` footer for a change that breaks the public API.
 
