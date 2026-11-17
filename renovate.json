@@ -1,6 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    "github>klconsultancy/workflows:shared-workflows"
+  ],
   "description": "Updates come on the 1st and the 15th, grouped, and are merged once main's required checks pass, unless they raise a major version. release-please collects the fix(deps) ones in the release pull request, which is merged by hand.",
   "timezone": "Europe/Brussels",
   "schedule": ["* 0-8 1,15 * *"],
@@ -68,7 +72,9 @@
       "enabled": false
     },
     {
+      "description": "The shared workflows' pin is left to its own pull request (the shared-workflows preset).",
       "matchManagers": ["github-actions"],
+      "matchPackageNames": ["!klconsultancy/workflows"],
       "semanticCommitType": "ci",
       "groupName": "actions"
     },
