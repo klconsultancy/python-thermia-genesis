@@ -14,6 +14,11 @@ terms before changing code.
   never push to `main` (see Commands).
 - PR titles and squash commits follow Conventional Commits (`feat:`, `fix:`, `docs:`,
   `test:`, `refactor:`, `build:`, `ci:`, `chore:`). They drive release-please.
+- The merge queue squashes a pull request into its title alone. Mark a breaking change with
+  `!` in the title. When the release note needs more than the title, add the commit message,
+  with its `BREAKING CHANGE:` footer, to the pull request body between
+  `BEGIN_COMMIT_OVERRIDE` and `END_COMMIT_OVERRIDE`: release-please reads it from there,
+  also after the merge.
 - When a design choice or domain term changes, update `docs/design.md` or `CONTEXT.md` in
   the same PR. Do not create ADRs.
 - Dependency updates come from Renovate (`renovate.json`): grouped on the 1st and the 15th
