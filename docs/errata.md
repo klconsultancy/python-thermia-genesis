@@ -31,6 +31,7 @@ field report from another pump.
 | Scale 100 (chapter 2.1) | The scale table says the transmitted value is "a tenfold larger"; the worked example in the same section transmits -5 °C as -500. | Hundredfold (the worked example; the reference pump's discharge pipe reads 2667: 26.67 °C, not 266.7 °C). |
 | Footnote \*5 "Should always be set to 1 i auto mode" | Printed under the coil table of chapter 3 and with the footnotes of chapter 9, but no register refers to it. | Not applied to any register. To be verified which register it belongs to. |
 | Footnotes | Printed at the end of chapter 9 instead of in their own chapter (as in 17.0). | Treated as document-wide footnotes. |
+| Firmware 18.0 | No protocol document for 18.0 is available. The reference pump updated itself from 17.1.11 to 18.0.1 (noticed 2026-11-18). Its dump (`tests/fixtures/calibra7-18.0.1.json`) reads the same addresses as on 17.1.11, with no failed read and no change in any holding register; the input registers that differ follow from the compressor running during the 18.0.1 dump and idle during the 17.1.11 one. | 18.0 uses the 17.1 map and counts as supported. A register 18.0 adds, or a changed meaning behind an equal value, would not show in a dump. |
 
 ## Undocumented behaviour
 

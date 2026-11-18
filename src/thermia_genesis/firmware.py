@@ -2,8 +2,9 @@
 
 from typing import NamedTuple
 
-# The firmware the register map is written for; docs/design.md (Scope).
-SUPPORTED = (17, 1)
+# The firmware versions the register map is written for or checked against;
+# docs/design.md (Scope).
+SUPPORTED = frozenset({(17, 1), (18, 0)})
 
 
 class FirmwareVersion(NamedTuple):
@@ -19,5 +20,5 @@ class FirmwareVersion(NamedTuple):
 
     @property
     def supported(self) -> bool:
-        """Whether the register map is written for this major.minor version (17.1)."""
-        return (self.major, self.minor) == SUPPORTED
+        """Whether the register map applies to this major.minor version (17.1 or 18.0)."""
+        return (self.major, self.minor) in SUPPORTED

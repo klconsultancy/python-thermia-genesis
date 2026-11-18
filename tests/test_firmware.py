@@ -21,6 +21,17 @@ async def test_reads_the_firmware_version(mock_modbus_unit: MockModbusUnit) -> N
     assert version >= (17, 1)
 
 
+async def test_reports_firmware_18_0_as_supported(mock_modbus_unit: MockModbusUnit) -> None:
+    # The reference pump updated itself to 18.0.1; its dump matches the 17.1 map (errata).
+    mock_modbus_unit.input[311] = [18, 0, 1]
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    await pump.async_update()
+
+    assert pump.firmware_version == FirmwareVersion(18, 0, 1)
+    assert pump.firmware_version.supported
+
+
 def test_has_no_firmware_version_before_the_first_update(
     mock_modbus_unit: MockModbusUnit,
 ) -> None:
@@ -31,14 +42,14 @@ def test_has_no_firmware_version_before_the_first_update(
 
 async def test_reports_another_firmware_as_unsupported(mock_modbus_unit: MockModbusUnit) -> None:
     # The 17.1 map is still used; the caller decides how to warn.
-    mock_modbus_unit.input[311] = [18, 0, 2]
+    mock_modbus_unit.input[311] = [19, 0, 2]
     mock_modbus_unit.input[13] = 905
     pump = ThermiaGenesis(mock_modbus_unit)
 
     await pump.async_update()
 
     version = pump.firmware_version
-    assert version == FirmwareVersion(18, 0, 2)
+    assert version == FirmwareVersion(19, 0, 2)
     assert not version.supported
     assert pump.heat_pump.outdoor_temperature == 9.05
 
