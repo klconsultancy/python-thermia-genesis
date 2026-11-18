@@ -39,7 +39,8 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
   transcribed in [`docs/protocol/17.1`](protocol/17.1/). It decides address, register space,
   scale and unit, unless [`errata.md`](errata.md) records otherwise (for example the unit of
   holding 58). Chapters 4–9 are only used to group registers per subsystem. Enum and
-  bit-flag values come from the footnotes.
+  bit-flag values come from the footnotes, plus the values the errata add (for example 10,
+  power limit, on input 82).
 - Registers are **hand-written** with `modbus_connection.model` field types (`gauge`,
   `integer`, `coil`, `discrete_input`, `enum`, ...). No CSV or code generator:
   the map is small enough that readable, reviewable code wins.

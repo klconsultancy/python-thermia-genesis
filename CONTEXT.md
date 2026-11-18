@@ -48,7 +48,9 @@ marked "(EM)" only exist with an extension module.
 : The user-selected mode of the pump: off, standby or on/auto.
 
 **Smart grid mode**
-: The external energy-tariff mode: EVU, normal, comfort or boost.
+: The power consumption mode in force, as input 82 reports it: EVU, normal, comfort or boost
+  from an external tariff signal or the BMS, or power limit when the PL/LU power consumption
+  control caps the pump's input power.
 
 **Primary / secondary unit**
 : In cascaded installations one primary controller drives secondary heat pump units.
