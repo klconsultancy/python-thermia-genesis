@@ -10,9 +10,11 @@ Domain terms are defined in [`CONTEXT.md`](../CONTEXT.md).
 - Thermia heat pumps on the **Genesis** platform (Atlas, Calibra, Calibra E, Calibra Cool,
   Calibra RXT, Diplomat Inverter), controlled over **Modbus**.
 - Only firmware **17.1** is implemented. The register map lives in a per-version module
-  (`v17_1`) so other versions can be added side by side later.
-- Reference hardware: Calibra 7, firmware 17.1.11, Modbus TCP, EM3 extension module with
-  passive cooling.
+  (`v17_1`) so other versions can be added side by side later. Firmware **18.0** uses the
+  same map: the reference pump's dump on 18.0.1 matched it address for address (errata), and
+  no protocol document for 18.0 is available yet.
+- Reference hardware: Calibra 7, Modbus TCP, EM3 extension module with passive cooling;
+  firmware 17.1.11 until November 2026, then 18.0.1 (it updated itself).
 - Modbus TCP first. RTU is not excluded: `modbus-connection` already supports serial and
   RTU-over-TCP, so adding it is mostly config-flow work in the integration.
 - Read first, then writes: the write API (#19, see Public API) covers a few settings so
@@ -231,7 +233,7 @@ await pump.status.write(Status.operational_mode, OperationalMode.STANDBY)
 - The firmware version is read from input registers 311–313 (major, minor, micro), with
   every update. `pump.firmware_version` is a `FirmwareVersion` named tuple (`str()` gives
   "17.1.11", it compares as a tuple), or `None` until an update has read it.
-- On a major/minor version other than 17.1 the library still uses the 17.1 map;
+- On a major/minor version other than 17.1 or 18.0 the library still uses the 17.1 map;
   `FirmwareVersion.supported` is then `False`, and the caller decides how to warn (the Home
   Assistant integration raises a repair issue).
 - Optional subsystems are detected from their "Enable ..." coils: mix valve 1 coil 11, HGW

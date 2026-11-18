@@ -15,7 +15,7 @@ Async Python library for Thermia heat pumps on the **Genesis** platform (Atlas, 
 Calibra E, Calibra Cool, Calibra RXT, Diplomat Inverter), using Modbus via
 [`modbus-connection`](https://home-assistant-libs.github.io/modbus-connection/).
 
-> **Status:** early development. Only Genesis firmware 17.1 is targeted.
+> **Status:** early development. Genesis firmware 17.1 is targeted; 18.0 reads the same.
 
 This library powers the [Thermia Genesis Home Assistant integration](https://github.com/klconsultancy/ha-thermia-genesis).
 
