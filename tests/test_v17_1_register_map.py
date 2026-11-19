@@ -113,6 +113,8 @@ UNIT_ERRATA = {
     ("holding", 61): "s",
     ("holding", 62): "s",
     ("holding", 63): "s",
+    # The display counts the restart down from 5 minutes; input 60 reads 123, then 22.
+    ("input", 60): "s",
 }
 DOCUMENTED |= {key: DOCUMENTED[key]._replace(unit=unit) for key, unit in UNIT_ERRATA.items()}
 

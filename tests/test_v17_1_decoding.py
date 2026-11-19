@@ -109,6 +109,17 @@ async def test_reads_enum_from_footnote(mock_modbus_unit: MockModbusUnit) -> Non
     assert pump.heat_pump.smart_grid_mode is SmartGridMode.NORMAL
 
 
+async def test_reads_the_power_limit_smart_grid_mode(mock_modbus_unit: MockModbusUnit) -> None:
+    # Not in footnote *4: in PL/LU mode with holding 124 = 1, the reference pump reads 10
+    # while its display shows "Vermogensbegrenzing" (errata).
+    mock_modbus_unit.input[82] = 10
+    pump = ThermiaGenesis(mock_modbus_unit)
+
+    await pump.async_update()
+
+    assert pump.heat_pump.smart_grid_mode is SmartGridMode.POWER_LIMIT
+
+
 async def test_reads_enums_of_the_reference_pump(mock_modbus_unit: MockModbusUnit) -> None:
     # The reference pump uses its own outdoor sensor (chapter 3.4, register 117: 0) and has
     # the internal immersion heater enabled (footnote *7: 2).

@@ -4,12 +4,13 @@ from enum import IntEnum, IntFlag
 
 
 class SmartGridMode(IntEnum):
-    """Current Smart Grid mode (footnote *4)."""
+    """Current Smart Grid mode (footnote *4, and 10 from the errata)."""
 
     EVU = 1
     NORMAL = 4
     COMFORT = 5
     BOOST = 6
+    POWER_LIMIT = 10
 
 
 class OutdoorTemperatureSource(IntEnum):

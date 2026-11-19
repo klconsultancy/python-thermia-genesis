@@ -91,7 +91,7 @@ class HeatPumpUnit(Subsystem):
     compressor_available_gears = input_register(gauge(4, 0.01))
     compressor_speed = input_register(integer(5, signed=False, unit="rpm"))
     compressor_speed_percent = input_register(gauge(54, 0.01, unit="%"))
-    compressor_start_restriction_timer = input_register(integer(60, signed=False))
+    compressor_start_restriction_timer = input_register(integer(60, signed=False, unit="s"))
     compressor_current_gear = input_register(gauge(61, 0.01))
     compressor_operating_hours = input_register(uint32(48, unit="h"))
     expansion_valve_opening_degree = input_register(gauge(315, 0.01, unit="%"))
