@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.5.0...v0.6.0) (2026-11-19)
+
+
+### Features
+
+* support firmware 18.0 ([#86](https://github.com/klconsultancy/python-thermia-genesis/issues/86)) ([cb6aacc](https://github.com/klconsultancy/python-thermia-genesis/commit/cb6aacc43be230958917225ab0c07ef9520abf2c))
+
+
+### Bug Fixes
+
+* decode the power limit Smart Grid mode and the restart timer in seconds ([#85](https://github.com/klconsultancy/python-thermia-genesis/issues/85)) ([1fc1917](https://github.com/klconsultancy/python-thermia-genesis/commit/1fc1917f8a83be57e64ef7fab694cc2b75888450))
+
+
+### Documentation
+
+* record that the pump clears the alarm reset coil itself ([#75](https://github.com/klconsultancy/python-thermia-genesis/issues/75)) ([7f2a74a](https://github.com/klconsultancy/python-thermia-genesis/commit/7f2a74adad9abb092e9bce6385a98d23774183e7))
+
 ## [0.5.0](https://github.com/klconsultancy/python-thermia-genesis/compare/v0.4.0...v0.5.0) (2026-11-10)
 
 
